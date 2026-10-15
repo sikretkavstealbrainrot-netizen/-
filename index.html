@@ -7,9 +7,7 @@
 </head>
 <body>
 <script>
-window.__errs=[];
 window.onerror=function(m,s,l){
-  window.__errs.push(m+' @'+l);
   var e=document.getElementById('eng');
   if(e){e.innerHTML='<b style="color:#ff6b6b">ОШИБКА JS: '+m+' (строка '+l+')</b>';}
   return false;
@@ -243,14 +241,21 @@ var PROXIES={
   jina:{w:function(u){return 'https://r.jina.ai/'+u;},p:function(r){return r.text().then(function(t){return {status:r.status,text:t};});}}
 };
 var proxyOrder=['codetabs','aoraw','corsproxy'],fails={},dead={};
-function timedFetch(url,o){o=o||{};var c=new AbortController(),t=setTimeout(function(){c.abort();},o.timeout||7000);
-  return fetch(url,{signal:c.signal,headers:o.headers||{}}).then(function(r){clearTimeout(t);return r;},function(e){clearTimeout(t);throw e;});}
+
+function timedFetch(url,o){
+  o=o||{};
+  var c=new AbortController(),t=setTimeout(function(){c.abort();},o.timeout||7000);
+  return fetch(url,{signal:c.signal,headers:o.headers||{}}).then(function(r){clearTimeout(t);return r;},function(e){clearTimeout(t);throw e;});
+}
 function direct(url,o){return timedFetch(url,o).then(function(r){return r.text().then(function(t){return {status:r.status,text:t,via:'direct'};});});}
 function viaProxy(id,url,to){var P=PROXIES[id];return timedFetch(P.w(url),{timeout:to||9000}).then(function(r){return P.p(r);}).then(function(o){return {status:o.status,text:o.text||'',via:id};});}
 function markOk(id){fails[id]=0;dead[id]=false;}
 function markDead(id){fails[id]=(fails[id]||0)+1;if(fails[id]>=3){dead[id]=true;}}
 function alive(){var l=proxyOrder.filter(function(i){return !dead[i];});if(!l.length){Object.keys(dead).forEach(function(k){dead[k]=false;});l=proxyOrder.slice();}return l;}
-function pf(url,o){o=o||{};var list=alive(),t0=Date.now();
+
+function pf(url,o){
+  o=o||{};
+  var list=alive(),t0=Date.now();
   return new Promise(function(res,rej){
     var started=0,failed=0,settled=false,timers=[];
     function done(){settled=true;timers.forEach(clearTimeout);}
@@ -286,15 +291,24 @@ function card(o){
 function kv(p){return '<div class="kv">'+p.map(function(x){return '<div class="box"><div class="l">'+esc(x[0])+'</div><div class="v">'+esc(x[1]||'—')+'</div></div>';}).join('')+'</div>';}
 function push(k,d){var o={kind:k};for(var i in d)o[i]=d[i];RESULTS.push(o);}
 
-function api(id,name,cat,urlFn,okFn,rowsFn,linkFn){return {id:id,name:name,cat:cat,run:function(u){
-  var url=urlFn(u);
-  return smart(url).then(function(r){
-    if(r.status===404||r.status===410)return {found:false};
-    if(r.status>=500)throw new Error('HTTP '+r.status);
-    var j=null;try{j=JSON.parse(r.text);}catch(e){}
-    if(!j||!okFn(j))return {found:false};
-    return {found:true,rows:rowsFn(j),link:linkFn?linkFn(j):url};
-  });};};}
+function api(id,name,cat,urlFn,okFn,rowsFn,linkFn){
+  return {
+    id:id,
+    name:name,
+    cat:cat,
+    run:function(u){
+      var url=urlFn(u);
+      return smart(url).then(function(r){
+        if(r.status===404||r.status===410)return {found:false};
+        if(r.status>=500)throw new Error('HTTP '+r.status);
+        var j=null;
+        try{j=JSON.parse(r.text);}catch(e){}
+        if(!j||!okFn(j))return {found:false};
+        return {found:true,rows:rowsFn(j),link:linkFn?linkFn(j):url};
+      });
+    }
+  };
+}
 
 var SRC=[
 api('github','GitHub','код',function(u){return 'https://api.github.com/users/'+u;},function(j){return j&&j.login;},
@@ -343,17 +357,20 @@ api('wakatime','WakaTime','код',function(u){return 'https://wakatime.com/api/
  function(j){return [['имя',j.data.display_name]];},function(j){return j.data.website;}),
 api('gravatar','Gravatar','прочее',function(u){return 'https://gravatar.com/'+md5(u)+'.json';},function(j){return j&&j.entry;},
  function(j){return [['имя',j.entry[0].displayName],['о себе',j.entry[0].aboutMe]];},function(u){return 'https://gravatar.com/'+md5(u);}),
-{id:'ghmail',name:'GitHub: email из коммитов',cat:'деанон',run:function(u){
-  return smart('https://api.github.com/users/'+u+'/events/public').then(function(r){
-    if(r.status>=400)throw new Error('HTTP '+r.status);
-    var j=JSON.parse(r.text),mails={},list=[];
-    j.forEach(function(e){if(e.type==='PushEvent'&&e.payload&&e.payload.commits)e.payload.commits.forEach(function(c){var m=c.author&&c.author.email;if(m&&!/noreply/.test(m)&&!mails[m]){mails[m]=1;list.push(m);}});});
-    return smart('https://api.github.com/users/'+u+'/social_accounts').then(function(x){return JSON.parse(x.text);},function(){return [];}).then(function(soc){
-      if(!list.length&&!soc.length)return {found:false};
-      return {found:true,rows:[['email',list.join('\n')],['связи',soc.map(function(s){return s.provider+': '+s.url;}).join('\n')]],link:'https://github.com/'+u,note:'email из публичных коммитов'};
+{
+  id:'ghmail',name:'GitHub: email из коммитов',cat:'деанон',
+  run:function(u){
+    return smart('https://api.github.com/users/'+u+'/events/public').then(function(r){
+      if(r.status>=400)throw new Error('HTTP '+r.status);
+      var j=JSON.parse(r.text),mails={},list=[];
+      j.forEach(function(e){if(e.type==='PushEvent'&&e.payload&&e.payload.commits)e.payload.commits.forEach(function(c){var m=c.author&&c.author.email;if(m&&!/noreply/.test(m)&&!mails[m]){mails[m]=1;list.push(m);}});});
+      return smart('https://api.github.com/users/'+u+'/social_accounts').then(function(x){return JSON.parse(x.text);},function(){return [];}).then(function(soc){
+        if(!list.length&&!soc.length)return {found:false};
+        return {found:true,rows:[['email',list.join('\n')],['связи',soc.map(function(s){return s.provider+': '+s.url;}).join('\n')]],link:'https://github.com/'+u,note:'email из публичных коммитов'};
+      });
     });
-  });
-}}
+  }
+}
 ];
 
 var TOP=['GitHub','GitLab','Bitbucket','Twitter','Instagram','Reddit','TikTok','YouTube','Pinterest','Twitch','Steam','Spotify','Telegram','VK','Facebook','Snapchat','Tumblr','Flickr','Medium','DeviantArt','Behance','Dribbble','SoundCloud','Last.fm','Goodreads','Wattpad','HackerNews','Keybase','Codeberg','Docker Hub','npm','PyPI','Kaggle','LeetCode','HackerRank','Codewars','Duolingo','Strava','MyAnimeList','AniList','Letterboxd','Trello','ProductHunt','Gravatar','Disqus','Vimeo','Dailymotion','Imgur','Giphy','Mastodon','Bluesky','Roblox','Slack','Notion','About.me','Figma','Fiverr','Upwork','Freelancer','Blogger','WordPress','LiveJournal','Xing','Mixcloud','Bandcamp','Rumble','Odysee','Bitchute'];
@@ -448,14 +465,16 @@ function runTg(deep){
     chain=chain.then(function(){return pf('https://t.me/s/'+id,{timeout:11000}).then(function(r){var c=parseChan(r.text);pages.push(c);c.posts.forEach(function(p){harvest(p.text,acc);});},function(){});});
     if(deep)chain=chain.then(function(){
       var before=pages[0]&&pages[0].before,steps=0;
-      function step(){ if(!before||steps>=6)return Promise.resolve();
+      function step(){
+        if(!before||steps>=6)return Promise.resolve();
         steps++;
         return pf('https://t.me/s/'+id+'?before='+before,{timeout:11000}).then(function(r){
           var c=parseChan(r.text);
           if(!c.posts.length)return;
           pages.push(c);c.posts.forEach(function(p){harvest(p.text,acc);});
           before=c.before;return step();
-        },function(){});}
+        },function(){});
+      }
       return step();
     });
   } else {
@@ -643,9 +662,11 @@ function runLeak(){
 var bulkAbort=false;
 function pool(items,worker,conc,onTick){
   var i=0,done=0;
-  function run(){ if(i>=items.length||bulkAbort)return Promise.resolve();
+  function run(){
+    if(i>=items.length||bulkAbort)return Promise.resolve();
     var idx=i++;
-    return Promise.resolve(worker(items[idx])).then(function(){},function(){}).then(function(){done++;onTick(done);return run();}); }
+    return Promise.resolve(worker(items[idx])).then(function(){},function(){}).then(function(){done++;onTick(done);return run();});
+  }
   var a=[];for(var k=0;k<Math.min(conc,items.length);k++)a.push(run());
   return Promise.all(a);
 }
@@ -734,22 +755,29 @@ function chanCheck(){
 }
 
 var ACT={
-  tab:function(el){var t=el.getAttribute('data-tab');
+  tab:function(el){
+    var t=el.getAttribute('data-tab');
     $$('#tabs button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===t);});
     $$('.panel').forEach(function(p){p.classList.toggle('on',p.id==='p-'+t);});
-    log('вкладка: '+t);},
+    log('вкладка: '+t);
+  },
   nick:function(){runNick($('#nickIn').value);},
   demo:function(){$('#nickIn').value='torvalds';runNick('torvalds');},
-  nickOf:function(el){var u=el.getAttribute('data-user');ACT.tab($('#tabs button[data-tab=nick]'));$('#nickIn').value=u;runNick(u);},
+  nickOf:function(el){var u=el.getAttribute('data-user');$('#nickIn').value=u;ACT.tab($('#tabs button[data-tab=nick]'));runNick(u);},
   tg:function(){runTg(false);},
   tgDeep:function(){runTg(true);},
-  email:runEmail,phone:runPhone,net:runNet,leak:runLeak,bulk:runBulk,
+  email:runEmail,
+  phone:runPhone,
+  net:runNet,
+  leak:runLeak,
+  bulk:runBulk,
   bulkStop:function(){bulkAbort=true;log('остановка');},
   diag:runDiag,
   exportJson:function(){
     var blob=new Blob([JSON.stringify({generated:new Date().toISOString(),results:RESULTS},null,2)],{type:'application/json'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='osint-report.json';a.click();
-    log('отчёт сохранён');}
+    log('отчёт сохранён');
+  }
 };
 
 document.addEventListener('click',function(ev){
