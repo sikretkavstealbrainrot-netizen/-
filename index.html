@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OSINT Scanner</title>
 <style>
-:root{--bg:#0b0f14;--p:#111823;--p2:#16202c;--ln:#22303f;--tx:#dbe6f2;--dim:#7d8fa3;--acc:#3ba3ff;--ok:#39d98a;--err:#ff5c5c}
+:root{--bg:#0b0f14;--p:#111823;--p2:#16202c;--ln:#22303f;--tx:#dbe6f2;--dim:#7d8fa3;--acc:#3ba3ff;--ok:#39d98a;--err:#ff5c5c;--gold:#ffc247}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
 header{padding:12px 14px;border-bottom:1px solid var(--ln);background:#0e141c}
@@ -14,27 +14,32 @@ h1{margin:0 0 6px;font-size:16px}
 #engine{font-size:12px;font-weight:700;color:var(--dim)}
 #engine.good{color:var(--ok)}
 #echo{font-size:11px;color:var(--dim)}
+#myip{font-size:11px;color:var(--gold)}
 #err{display:none;margin:8px 14px;padding:8px 10px;background:#2a1111;border:1px solid #5c2222;color:#ffb4b4;border-radius:8px;font-size:12px;white-space:pre-wrap}
 nav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px}
 nav button{background:var(--p);border:1px solid var(--ln);color:var(--dim);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
 nav button.on{background:var(--acc);border-color:var(--acc);color:#04121f;font-weight:700}
+nav button.hot{border-color:var(--gold);color:var(--gold)}
+nav button.hot.on{background:var(--gold);color:#1a1300}
 main{padding:0 14px 50px}
 .tab{display:none}.tab.on{display:block}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 input{flex:1;min-width:180px;background:var(--p);border:1px solid var(--ln);color:var(--tx);padding:11px 12px;border-radius:9px;font-size:14px}
 input:focus{outline:none;border-color:var(--acc)}
 .go{background:var(--acc);color:#04121f;border:0;padding:11px 18px;border-radius:9px;font-weight:700;cursor:pointer}
+.gold{background:var(--gold);color:#1a1300;border:0;padding:11px 18px;border-radius:9px;font-weight:800;cursor:pointer}
 .ghost{background:var(--p);color:var(--tx);border:1px solid var(--ln);padding:11px 16px;border-radius:9px;cursor:pointer}
-#prog-tg,#prog-nick,#prog-mail,#prog-phone,#prog-dom,#prog-net{font-size:12px;color:var(--dim);margin:6px 0}
+.prog{font-size:12px;color:var(--dim);margin:6px 0}
 .card{background:var(--p);border:1px solid var(--ln);border-radius:10px;padding:10px 12px;margin:8px 0}
 .card .ct{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:700}
 .card .cb{margin-top:6px;white-space:pre-wrap;word-break:break-word;font-size:13px}
 .k{color:var(--dim)}a{color:var(--acc)}
-.bad{color:var(--err)}.good{color:var(--ok)}
+.bad{color:var(--err)}.good{color:var(--ok)}.warn{color:var(--gold)}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .acts a,.acts button{font-size:12px;padding:7px 11px;border-radius:8px;border:1px solid var(--ln);background:var(--p2);color:var(--tx);cursor:pointer;text-decoration:none}
 .call{background:var(--ok)!important;color:#04121f!important;font-weight:800;border:0!important;font-size:15px!important;padding:10px 20px!important}
 .chip{display:inline-block;background:var(--p2);border:1px solid var(--ln);border-radius:20px;padding:3px 10px;margin:3px 4px 0 0;font-size:12px}
+.av{width:72px;height:72px;border-radius:50%;float:right;margin:0 0 6px 10px;object-fit:cover;border:1px solid var(--ln)}
 </style>
 </head>
 <body>
@@ -42,10 +47,12 @@ input:focus{outline:none;border-color:var(--acc)}
   <h1>OSINT Scanner</h1>
   <div id="engine">движок: запускается...</div>
   <div id="echo">клики: 0</div>
+  <div id="myip"></div>
 </header>
 <div id="err"></div>
 <nav id="nav">
-  <button data-tab="tg" class="on">Telegram</button>
+  <button data-tab="rep" class="on hot">ОТЧЁТ</button>
+  <button data-tab="tg">Telegram</button>
   <button data-tab="nick">Ник</button>
   <button data-tab="mail">Email</button>
   <button data-tab="phone">Телефон</button>
@@ -53,29 +60,33 @@ input:focus{outline:none;border-color:var(--acc)}
   <button data-tab="net">Связь</button>
 </nav>
 <main>
-  <section class="tab on" id="tab-tg">
+  <section class="tab on" id="tab-rep">
+    <div class="row"><input id="in-rep" data-enter="rep" placeholder="tg / ник / email / телефон / домен — что угодно"><button class="gold" data-act="rep">ПОЛНЫЙ ОТЧЁТ</button><button class="ghost" data-act="demo">Демо</button></div>
+    <div id="prog-rep" class="prog"></div><div id="out-rep"></div>
+  </section>
+  <section class="tab" id="tab-tg">
     <div class="row"><input id="in-tg" data-enter="tg" placeholder="@username или https://t.me/username"><button class="go" data-act="tg">Анализ</button><button class="ghost" data-act="demo">Демо</button></div>
-    <div id="prog-tg" class="small"></div><div id="out-tg"></div>
+    <div id="prog-tg" class="prog"></div><div id="out-tg"></div>
   </section>
   <section class="tab" id="tab-nick">
     <div class="row"><input id="in-nick" data-enter="nick" placeholder="ник (torvalds)"><button class="go" data-act="nick">Искать</button><button class="ghost" data-act="demo">Демо</button></div>
-    <div id="prog-nick" class="small"></div><div id="out-nick"></div>
+    <div id="prog-nick" class="prog"></div><div id="out-nick"></div>
   </section>
   <section class="tab" id="tab-mail">
     <div class="row"><input id="in-mail" data-enter="mail" placeholder="email@domain.com"><button class="go" data-act="mail">Проверить</button><button class="ghost" data-act="demo">Демо</button></div>
-    <div id="prog-mail" class="small"></div><div id="out-mail"></div>
+    <div id="prog-mail" class="prog"></div><div id="out-mail"></div>
   </section>
   <section class="tab" id="tab-phone">
     <div class="row"><input id="in-phone" data-enter="phone" placeholder="+7 999 123-45-67"><button class="go" data-act="phone">Определить</button><button class="ghost" data-act="demo">Демо</button></div>
-    <div id="prog-phone" class="small"></div><div id="out-phone"></div>
+    <div id="prog-phone" class="prog"></div><div id="out-phone"></div>
   </section>
   <section class="tab" id="tab-dom">
     <div class="row"><input id="in-dom" data-enter="dom" placeholder="domain.com"><button class="go" data-act="dom">Сканировать</button><button class="ghost" data-act="demo">Демо</button></div>
-    <div id="prog-dom" class="small"></div><div id="out-dom"></div>
+    <div id="prog-dom" class="prog"></div><div id="out-dom"></div>
   </section>
   <section class="tab" id="tab-net">
     <div class="row"><button class="go" data-act="net">Проверить релеи и API</button></div>
-    <div id="prog-net" class="small"></div><div id="out-net"></div>
+    <div id="prog-net" class="prog"></div><div id="out-net"></div>
   </section>
 </main>
 <script>
@@ -89,7 +100,7 @@ function status(t,c){var e=$("#engine");if(!e)return;e.textContent="движок
 function showErr(m){var e=$("#err");if(!e)return;e.style.display="block";e.textContent="ОШИБКА JS: "+m;}
 window.onerror=function(m,s,l){showErr(m+(l?" (строка "+l+")":""));return false;};
 
-/* network */
+/* ---------- network ---------- */
 function fetchT(url,ms,headers){
   ms=ms||9000;var c=new AbortController();var t=setTimeout(function(){c.abort();},ms);
   return fetch(url,{signal:c.signal,headers:headers||{}}).then(function(r){
@@ -133,7 +144,7 @@ function api(url,ms){
   });
 }
 
-/* md5 */
+/* ---------- md5 ---------- */
 function md5(str){
   function rl(n,c){return (n<<c)|(n>>>(32-c));}
   function au(x,y){var l=(x&0xFFFF)+(y&0xFFFF),m=(x>>16)+(y>>16)+(l>>16);return (m<<16)|(l&0xFFFF);}
@@ -142,9 +153,9 @@ function md5(str){
   function gg(a,b,c,d,x,s,t){return cmn((b&d)|(c&(~d)),a,b,x,s,t);}
   function hh(a,b,c,d,x,s,t){return cmn(b^c^d,a,b,x,s,t);}
   function ii(a,b,c,d,x,s,t){return cmn(c^(b|(~d)),a,b,x,s,t);}
-  function bytes(str){var n=str.length,bl=n*8,b=[];for(var i=0;i<n;i++)b.push(str.charCodeAt(i)&0xFF);b.push(0x80);while(b.length%64!==56)b.push(0);for(i=0;i<8;i++)b.push((bl>>>(8*i))&0xFF);return b;}
-  function words(str){var x=[],b=bytes(str);for(var i=0;i<b.length;i+=4)x.push(b[i]|(b[i+1]<<8)|(b[i+2]<<16)|(b[i+3]<<24));return x;}
-  var x=words(str),a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  function by(str){var n=str.length,bl=n*8,b=[];for(var i=0;i<n;i++)b.push(str.charCodeAt(i)&0xFF);b.push(0x80);while(b.length%64!==56)b.push(0);for(i=0;i<8;i++)b.push((bl>>>(8*i))&0xFF);return b;}
+  function wd(str){var x=[],b=by(str);for(var i=0;i<b.length;i+=4)x.push(b[i]|(b[i+1]<<8)|(b[i+2]<<16)|(b[i+3]<<24));return x;}
+  var x=wd(str),a=1732584193,b=-271733879,c=-1732584194,d=271733878;
   for(var i=0;i<x.length;i+=16){
     var oa=a,ob=b,oc=c,od=d;
     a=ff(a,b,c,d,x[i+0],7,-680876936);d=ff(d,a,b,c,x[i+1],12,-389564586);c=ff(c,d,a,b,x[i+2],17,606105819);b=ff(b,c,d,a,x[i+3],22,-1044525330);
@@ -169,16 +180,12 @@ function md5(str){
   return hx(a)+hx(b)+hx(c)+hx(d);
 }
 
-/* helpers */
+/* ---------- helpers ---------- */
 function uniq(a){var s={},o=[];a.forEach(function(x){if(!s[x]){s[x]=1;o.push(x);}});return o;}
-function card(title,body){
-  var d=document.createElement("div");d.className="card";
-  d.innerHTML='<div class="ct">'+esc(title)+'</div><div class="cb">'+body+'</div>';
-  return d;
-}
+function card(t,b){var d=document.createElement("div");d.className="card";d.innerHTML='<div class="ct">'+esc(t)+'</div><div class="cb">'+b+'</div>';return d;}
 function chip(t){return '<span class="chip">'+esc(t)+'</span>';}
 
-/* phone */
+/* ---------- phone tables ---------- */
 var RU_OP={"900":"Билайн","901":"Билайн","902":"Билайн","903":"Билайн","904":"Билайн","905":"Билайн","906":"Билайн","908":"Билайн","909":"Билайн","960":"Билайн","961":"Билайн","962":"Билайн","963":"Билайн","964":"Билайн","965":"Билайн","966":"Билайн","967":"Билайн","968":"Билайн","969":"Билайн","910":"МТС","911":"МТС","912":"МТС","913":"МТС","914":"МТС","915":"МТС","916":"МТС","917":"МТС","918":"МТС","919":"МТС","950":"МТС","951":"МТС","952":"МТС","953":"МТС","954":"МТС","955":"МТС","956":"МТС","957":"МТС","958":"МТС","959":"МТС","970":"МТС","971":"МТС","972":"МТС","973":"МТС","974":"МТС","975":"МТС","976":"МТС","977":"МТС","978":"МТС","979":"МТС","980":"МТС","981":"МТС","982":"МТС","983":"МТС","984":"МТС","985":"МТС","986":"МТС","987":"МТС","988":"МТС","989":"МТС","920":"МегаФон","921":"МегаФон","922":"МегаФон","923":"МегаФон","924":"МегаФон","925":"МегаФон","926":"МегаФон","927":"МегаФон","928":"МегаФон","929":"МегаФон","930":"МегаФон","931":"МегаФон","932":"МегаФон","933":"МегаФон","934":"МегаФон","935":"МегаФон","936":"МегаФон","937":"МегаФон","938":"МегаФон","939":"МегаФон","999":"МегаФон","997":"МегаФон","998":"МегаФон","995":"Тинькофф","996":"Тинькофф","991":"Тинькофф","994":"Азербайджан"};
 var CC={"1":"США/Канада","7":"Россия/Казахстан","20":"Египет","27":"ЮАР","30":"Греция","31":"Нидерланды","32":"Бельгия","33":"Франция","34":"Испания","36":"Венгрия","39":"Италия","40":"Румыния","41":"Швейцария","43":"Австрия","44":"Великобритания","45":"Дания","46":"Швеция","47":"Норвегия","48":"Польша","49":"Германия","51":"Перу","52":"Мексика","54":"Аргентина","55":"Бразилия","56":"Чили","57":"Колумбия","58":"Венесуэла","60":"Малайзия","61":"Австралия","62":"Индонезия","63":"Филиппины","64":"Новая Зеландия","65":"Сингапур","66":"Таиланд","81":"Япония","82":"Ю.Корея","84":"Вьетнам","86":"Китай","90":"Турция","91":"Индия","92":"Пакистан","93":"Афганистан","94":"Шри-Ланка","95":"Мьянма","98":"Иран","212":"Марокко","213":"Алжир","216":"Тунис","218":"Ливия","234":"Нигерия","254":"Кения","255":"Танзания","351":"Португалия","352":"Люксембург","353":"Ирландия","354":"Исландия","355":"Албания","356":"Мальта","357":"Кипр","358":"Финляндия","359":"Болгария","370":"Литва","371":"Латвия","372":"Эстония","373":"Молдова","374":"Армения","375":"Беларусь","380":"Украина","381":"Сербия","382":"Черногория","385":"Хорватия","386":"Словения","387":"Босния","389":"Македония","420":"Чехия","421":"Словакия","423":"Лихтенштейн","591":"Боливия","593":"Эквадор","595":"Парагвай","598":"Уругвай","850":"КНДР","852":"Гонконг","853":"Макао","855":"Камбоджа","880":"Бангладеш","886":"Тайвань","960":"Мальдивы","961":"Ливан","962":"Иордания","963":"Сирия","964":"Ирак","965":"Кувейт","966":"Саудовская Аравия","967":"Йемен","968":"Оман","971":"ОАЭ","972":"Израиль","973":"Бахрейн","974":"Катар","975":"Бутан","976":"Монголия","977":"Непал","992":"Таджикистан","993":"Туркменистан","994":"Азербайджан","995":"Грузия","996":"Киргизия","998":"Узбекистан"};
 function normPhone(v){
@@ -189,18 +196,17 @@ function normPhone(v){
   var cc=null;for(var L=3;L>=1;L--){var p=d.slice(0,L);if(CC[p]){cc=p;break;}}
   return {e164:"+"+d,cc:cc,nat:cc?d.slice(cc.length):d};
 }
-function fmtNat(nat){if(nat.length===10)return nat.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/,"($1) $2-$3-$4");if(nat.length===11)return nat.replace(/(\d)(\d{3})(\d{3})(\d{2})(\d{2})/,"$1 $2 $3-$4-$5");return nat;}
+function fmtNat(n){if(n.length===10)return n.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/,"($1) $2-$3-$4");if(n.length===11)return n.replace(/(\d)(\d{3})(\d{3})(\d{2})(\d{2})/,"$1 $2 $3-$4-$5");return n;}
 
-/* telegram parse */
+/* ---------- telegram parse ---------- */
 function tgUser(v){v=String(v||"").trim();var m=v.match(/(?:t\.me\/|telegram\.me\/)?@?([A-Za-z0-9_]{3,32})/);return m?m[1]:v.replace(/[^A-Za-z0-9_]/g,"");}
-function meta(html,p){
-  var re=new RegExp('<meta[^>]+(?:property|name)=["\']'+p+'["\'][^>]*content=["\']([^"\']*)["\']','i');
-  var m=html.match(re);if(m)return m[1];
-  return "";
-}
 function meta2(html,p){
   var m=html.match(new RegExp('<meta[^>]+property=["\']'+p+'["\'][^>]*content=["\']([^"\']*)["\']','i'));if(m)return m[1];
   m=html.match(new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*property=["\']'+p+'["\']','i'));return m?m[1]:"";
+}
+function metaN(html,p){
+  var m=html.match(new RegExp('<meta[^>]+name=["\']'+p+'["\'][^>]*content=["\']([^"\']*)["\']','i'));if(m)return m[1];
+  m=html.match(new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*name=["\']'+p+'["\']','i'));return m?m[1]:"";
 }
 function tgExtra(html){var m=html.match(/tgme_page_extra[^>]*>([^<]*)</i);return m?m[1].trim():"";}
 function clean(s){return String(s).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ").replace(/&amp;/g,"&").replace(/&nbsp;/g," ").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\s+/g," ").trim();}
@@ -209,27 +215,41 @@ function emailsOf(t){return t.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{
 function phonesOf(t){return (t.match(/(?:\+?\d[\d\s\-\(\)]{8,16}\d)/g)||[]).map(function(x){return x.trim();});}
 function mentionsOf(t){var s={},re=/@([A-Za-z0-9_]{3,32})/g,m;while((m=re.exec(t)))s[m[1].toLowerCase()]=(s[m[1].toLowerCase()]||0)+1;return s;}
 
-/* ---- scan: telegram ---- */
-function scanTg(){
-  var u=tgUser($("#in-tg").value),out=$("#out-tg"),prog=$("#prog-tg");
-  out.innerHTML="";
-  if(!u){prog.textContent="введите юзернейм или ссылку";return;}
+/* ---------- scans ---------- */
+function scanTg(val,out,prog){
+  out=out||$("#out-tg");prog=prog||$("#prog-tg");
+  var u=tgUser(val!=null?val:$("#in-tg").value);
+  if(!out.dataset.keep)out.innerHTML="";
+  if(!u){prog.textContent="введите юзернейм или ссылку";return Promise.resolve();}
   prog.textContent="загружаю профиль @"+u+" ...";status("запрос t.me/"+u);
-  api("https://t.me/"+u,10000).then(function(html){
+  return api("https://t.me/"+u,10000).then(function(html){
     status("разбор профиля","good");
-    var title=meta2(html,"og:title")||meta(html,"og:title")||u;
-    var desc=meta2(html,"og:description")||meta(html,"og:description")||"";
-    var img=meta2(html,"og:image")||meta(html,"og:image")||"";
+    var title=meta2(html,"og:title")||metaN(html,"twitter:title")||u;
+    var desc=meta2(html,"og:description")||metaN(html,"description")||"";
+    var img=meta2(html,"og:image")||"";
     var extra=tgExtra(html);
     var isChan=/tgme_channel_info|подписчик|subscriber/i.test(html);
     var b="";
-    if(img)b+='<img src="'+esc(img)+'" style="width:64px;height:64px;border-radius:50%;float:right;margin-left:8px" onerror="this.style.display=\'none\'">';
+    if(img)b+='<img class="av" src="'+esc(img)+'" onerror="this.style.display=\'none\'">';
+    b+='<div><span class="k">юзернейм:</span> @'+esc(u)+'</div>';
     b+='<div><span class="k">имя:</span> '+esc(title)+'</div>';
     if(extra)b+='<div><span class="k">инфо:</span> '+esc(extra)+'</div>';
     if(desc)b+='<div><span class="k">описание:</span> '+esc(desc)+'</div>';
+    b+='<div><span class="k">тип:</span> '+(isChan?"канал/группа":"личный профиль")+'</div>';
     b+='<div class="acts"><a href="https://t.me/'+esc(u)+'" target="_blank">Открыть в Telegram</a></div>';
     out.appendChild(card("Telegram: @"+u,b));
-    if(isChan){tgChannel(u,out,prog);}else{prog.textContent="это профиль, не канал";}
+    prog.textContent="контакты из описания ...";
+    var ph=uniq(phonesOf(desc+" "+extra)),em=uniq(emailsOf(desc));
+    if(ph.length||em.length){
+      var cb="";
+      if(ph.length)cb+='<div><span class="k">телефоны:</span> '+ph.slice(0,5).map(esc).join(", ")+'</div>';
+      if(em.length)cb+='<div><span class="k">email:</span> '+em.slice(0,5).map(esc).join(", ")+'</div>';
+      if(ph.length)cb+='<div class="acts">'+ph.slice(0,3).map(function(p){var n=normPhone(p);return '<a class="call" href="tel:'+esc(n.e164)+'">ПОЗВОНИТЬ '+esc(n.e164)+'</a>';}).join("")+'</div>';
+      out.appendChild(card("Контакты из профиля",cb));
+    }
+    if(isChan)return tgChannel(u,out,prog);
+    prog.textContent="готово";
+    return null;
   }).catch(function(e){
     out.appendChild(card("Telegram: @"+u,'<span class="bad">не удалось: '+esc(e.message)+'</span>'));
     prog.textContent="ошибка";
@@ -249,23 +269,24 @@ function tgChannel(u,out,prog){
       return one();
     }).catch(function(){page=99;});
   }
-  one().then(function(){
+  return one().then(function(){
     var text=posts.join("\n");
     var em=uniq(emailsOf(text)),ph=uniq(phonesOf(text)),mn=mentionsOf(text);
     var b="<div><span class=\"k\">постов прочитано:</span> "+posts.length+"</div>";
-    if(em.length)b+='<div><span class="k">email:</span> '+em.map(esc).join(", ")+'</div>';
-    if(ph.length)b+='<div><span class="k">телефоны:</span> '+ph.slice(0,5).map(esc).join(", ")+'</div>';
+    if(em.length)b+='<div><span class="k">email из постов:</span> '+em.slice(0,6).map(esc).join(", ")+'</div>';
+    if(ph.length)b+='<div><span class="k">телефоны из постов:</span> '+ph.slice(0,6).map(esc).join(", ")+'</div>';
+    if(ph.length)b+='<div class="acts">'+ph.slice(0,3).map(function(p){var n=normPhone(p);return '<a class="call" href="tel:'+esc(n.e164)+'">ЗВОНИТЬ '+esc(n.e164)+'</a>';}).join("")+'</div>';
     var mk=Object.keys(mn);
     if(mk.length)b+='<div><span class="k">упомянуты:</span> '+mk.slice(0,15).map(function(x){return chip("@"+x);}).join(" ")+'</div>';
     out.appendChild(card("Контакты из ленты канала",b));
     prog.textContent="ищу создателя / админов ...";
-    tgCreator(u,out,prog);
+    return tgCreator(u,out,prog);
   });
 }
 function tgCreator(u,out,prog){
   var kws=["админ","реклама","связь","контакт","автор","владелец","создатель","по всем вопросам","пишите","сотрудничество"];
   var scores={},orig={},texts=[];
-  Promise.all(kws.map(function(k){
+  return Promise.all(kws.map(function(k){
     return api("https://t.me/s/"+u+"?q="+encodeURIComponent(k),9000)
       .then(function(h){return {k:k,posts:tgPosts(h)};})
       .catch(function(){return {k:k,posts:[]};});
@@ -273,41 +294,33 @@ function tgCreator(u,out,prog){
     res.forEach(function(r){
       r.posts.forEach(function(t){
         texts.push(t);
-        var low=t.toLowerCase();
-        var mre=/@([a-z0-9_]{3,32})/g,mm,mpos=[];
+        var low=t.toLowerCase(),mre=/@([a-z0-9_]{3,32})/g,mm,mpos=[];
         while((mm=mre.exec(low))){mpos.push({u:mm[1],i:mm.index});if(!orig[mm[1]])orig[mm[1]]=t.substr(mm.index,mm[1].length+1);}
         var kpos=[];r.k.forEach(function(k){var i=low.indexOf(k);if(i>=0)kpos.push(i);});
-        mpos.forEach(function(o){
-          var boost=2;
-          kpos.forEach(function(ki){if(Math.abs(ki-o.i)<90)boost+=5;});
-          scores[o.u]=(scores[o.u]||0)+boost;
-        });
+        mpos.forEach(function(o){var boost=2;kpos.forEach(function(ki){if(Math.abs(ki-o.i)<90)boost+=5;});scores[o.u]=(scores[o.u]||0)+boost;});
       });
     });
     var cands=Object.keys(scores).sort(function(a,b){return scores[b]-scores[a];}).slice(0,10);
-    var allText=texts.join("\n");
-    var em=uniq(emailsOf(allText)),ph=uniq(phonesOf(allText));
+    var allText=texts.join("\n"),em=uniq(emailsOf(allText)),ph=uniq(phonesOf(allText));
     var b="";
     if(em.length)b+='<div><span class="k">email из постов:</span> '+em.slice(0,6).map(esc).join(", ")+'</div>';
     if(ph.length)b+='<div><span class="k">телефоны из постов:</span> '+ph.slice(0,6).map(esc).join(", ")+'</div>';
     if(cands.length){
-      b+='<div style="margin-top:6px"><span class="k">кандидаты в админы/создателя (по упоминаниям рядом с ключевыми словами):</span></div>';
+      b+='<div style="margin-top:6px"><span class="k">кандидаты в админы/создателя (упоминания рядом с ключевыми словами):</span></div>';
       cands.forEach(function(c){
-        var label=orig[c]||("@"+c);
-        b+='<div style="margin:6px 0"><b>'+esc(label)+'</b> <span class="k">(вес '+scores[c]+')</span> '+
-           '<span class="acts" style="display:inline-flex;margin:0 0 0 6px">'+
-           '<a href="https://t.me/'+esc(c)+'" target="_blank">написать</a>'+
+        b+='<div style="margin:6px 0"><b>'+esc(orig[c]||("@"+c))+'</b> <span class="k">(вес '+scores[c]+')</span> '+
+           '<span class="acts" style="display:inline-flex;margin:0 0 0 6px"><a href="https://t.me/'+esc(c)+'" target="_blank">написать</a>'+
            '<button data-nick="'+esc(c)+'">→ ники</button></span></div>';
       });
     }else{
-      b+='<div class="k">в постах с ключевыми словами ники не найдены — открой канал вручную, часто контакт закреплён в описании.</div>';
+      b+='<div class="k">в постах с ключевыми словами ники не найдены — открой канал вручную, контакт часто закреплён в описании.</div>';
     }
     out.appendChild(card("Создатель / админы канала",b));
     prog.textContent="готово · кандидатов: "+cands.length;
   });
 }
 
-/* ---- scan: nickname ---- */
+/* ---------- nickname ---------- */
 function A(name,urlFn,checkFn,linkFn){return {n:name,link:linkFn,run:function(q){return directJson(urlFn(q),9000).then(function(j){return checkFn(j,q);});}};}
 var NICK=[
  A("GitHub",function(q){return "https://api.github.com/users/"+q;},function(j){return j&&j.login?("создан: "+String(j.created_at||"?").slice(0,10)+" · репо: "+j.public_repos+" · имя: "+(j.name||"—")):null;},function(q){return "https://github.com/"+q;}),
@@ -331,32 +344,38 @@ var NICK=[
  A("WakaTime",function(q){return "https://wakatime.com/api/v1/users/"+q;},function(j){return j&&j.data?("имя: "+(j.data.display_name||"—")):null;},function(q){return "https://wakatime.com/@"+q;}),
  A("MyAnimeList",function(q){return "https://api.jikan.moe/v4/users/"+q;},function(j){return j&&j.data?("аниме: "+((j.data.anime_stats&&j.data.anime_stats.total_entries)||0)):null;},function(q){return "https://myanimelist.net/profile/"+q;}),
  A("StackOverflow",function(q){return "https://api.stackexchange.com/2.3/users?inname="+q+"&site=stackoverflow";},function(j){return j&&j.items&&j.items[0]?("репутация: "+j.items[0].reputation+" · id "+j.items[0].user_id):null;},function(q){return "https://stackoverflow.com/users?tab=Reputation&search="+q;}),
- {n:"Gravatar",run:function(q){var h=md5(q.toLowerCase());return directJson("https://gravatar.com/"+h+".json",9000).then(function(j){var p=j&&j.entry&&j.entry[0];return p?("имя: "+(p.displayName||"—")+" · "+(p.profileUrl||"")):null;}).catch(function(){return null;});},link:function(q){return "https://gravatar.com/"+md5(q.toLowerCase());}},
- {n:"Telegram",run:function(q){return api("https://t.me/"+q,9000).then(function(h){var t=meta2(h,"og:title")||meta(h,"og:title")||"";var e=tgExtra(h);return t?("t.me/"+q+" · "+t+(e?" · "+e:"")):null;}).catch(function(){return null;});},link:function(q){return "https://t.me/"+q;}}
+ {n:"Gravatar",run:function(q){var h=md5(q.toLowerCase());return directJson("https://gravatar.com/"+h+".json",9000).then(function(j){var p=j&&j.entry&&j.entry[0];return p?("имя: "+(p.displayName||"—")):null;}).catch(function(){return null;});},link:function(q){return "https://gravatar.com/"+md5(q.toLowerCase());}},
+ {n:"Telegram",run:function(q){return api("https://t.me/"+q,9000).then(function(h){var t=meta2(h,"og:title")||"";var e=tgExtra(h);return t?("t.me/"+q+" · "+t+(e?" · "+e:"")):null;}).catch(function(){return null;});},link:function(q){return "https://t.me/"+q;}}
 ];
-function scanNick(){
-  var q=$("#in-nick").value.trim().replace(/^@/,""),out=$("#out-nick"),prog=$("#prog-nick");
-  out.innerHTML="";
-  if(!q){prog.textContent="введите ник";return;}
+function scanNick(val,out,prog){
+  out=out||$("#out-nick");prog=prog||$("#prog-nick");
+  var q=String(val!=null?val:$("#in-nick").value).trim().replace(/^@/,"");
+  if(!out.dataset.keep)out.innerHTML="";
+  if(!q){prog.textContent="введите ник";return Promise.resolve();}
   prog.textContent="проверяю 0/"+NICK.length+" ...";status("скан ника "+q);
   var done=0,hit=0;
-  NICK.forEach(function(s){
+  var jobs=NICK.map(function(s){
     var p;try{p=s.run(q);}catch(e){p=Promise.reject(e);}
-    Promise.resolve(p).then(function(res){
+    return Promise.resolve(p).then(function(res){
       done++;if(res){hit++;out.appendChild(card(s.n,esc(res)+(s.link?'<div class="acts"><a href="'+esc(s.link(q))+'" target="_blank">открыть</a></div>':"")));}
       prog.textContent="проверено "+done+"/"+NICK.length+" · найдено "+hit;
     }).catch(function(){done++;prog.textContent="проверено "+done+"/"+NICK.length+" · найдено "+hit;});
   });
-  wmn(q,out,prog);
+  var w=wmn(q,out);
+  return Promise.all(jobs).then(function(){
+    out.appendChild(card("Итог по нику",'<div>проверено источников: '+NICK.length+' · найдено: '+hit+(hit===0?' <span class="warn">— совпадений нет или часть источников блокирует CORS</span>':'')+'</div>'));
+    prog.textContent="готово · найдено: "+hit;
+    return w;
+  });
 }
 var wmnCache=null;
-function wmn(q,out,prog){
+function wmn(q,out){
   function load(){
     if(wmnCache)return Promise.resolve(wmnCache);
     try{var c=localStorage.getItem("wmn");if(c){var t=JSON.parse(c);if(t.t&&Date.now()-t.t<7*864e5){wmnCache=t.d;return Promise.resolve(t.d);}}}catch(e){}
     return getJson("https://raw.githubusercontent.com/WebBreacher/WhatsMyName/main/wmn-data.json",12000).then(function(d){wmnCache=d;try{localStorage.setItem("wmn",JSON.stringify({t:Date.now(),d:d}));}catch(e){}return d;});
   }
-  load().then(function(d){
+  return load().then(function(d){
     var sites=(d.sites||[]).filter(function(s){return s.uri_pretty&&s.known&&s.known.length;}).slice(0,50);
     var found=[];
     sites.forEach(function(s){
@@ -369,66 +388,58 @@ function wmn(q,out,prog){
         if(ok)found.push({n:s.name,u:url});
       }).catch(function(){});
     });
-    setTimeout(function(){
+    return new Promise(function(res){setTimeout(function(){
       if(found.length){
-        var b=found.map(function(f){return '<a href="'+esc(f.u)+'" target="_blank" class="chip">'+esc(f.n)+'</a>';}).join(" ");
-        out.appendChild(card("WhatsMyName: найдено "+found.length,b));
+        out.appendChild(card("WhatsMyName: найдено "+found.length,found.map(function(f){return '<a href="'+esc(f.u)+'" target="_blank" class="chip">'+esc(f.n)+'</a>';}).join(" ")));
       }else{
         out.appendChild(card("WhatsMyName",'<span class="k">совпадений нет (или часть сайтов блокирует CORS)</span>'));
       }
-    },9000);
+      res();
+    },9000);});
   }).catch(function(){});
 }
 
-/* ---- scan: email ---- */
-function scanMail(){
-  var em=$("#in-mail").value.trim().toLowerCase(),out=$("#out-mail"),prog=$("#prog-mail");
-  out.innerHTML="";
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){prog.textContent="неверный email";return;}
+/* ---------- email ---------- */
+function doh(name,type){return directJson("https://cloudflare-dns.com/dns-query?name="+encodeURIComponent(name)+"&type="+type,8000,{Accept:"application/dns-json"}).then(function(j){return (j&&j.Answer)||[];});}
+function scanMail(val,out,prog){
+  out=out||$("#out-mail");prog=prog||$("#prog-mail");
+  var em=String(val!=null?val:$("#in-mail").value).trim().toLowerCase();
+  if(!out.dataset.keep)out.innerHTML="";
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){prog.textContent="неверный email";return Promise.resolve();}
   var dom=em.split("@")[1],h=md5(em);
   prog.textContent="проверяю "+em+" ...";status("скан email");
-  getJson("https://gravatar.com/"+h+".json",9000).then(function(j){
+  var jobs=[];
+  jobs.push(getJson("https://gravatar.com/"+h+".json",9000).then(function(j){
     var p=j&&j.entry&&j.entry[0];if(!p)return;
     var b="";if(p.displayName)b+='<div><span class="k">имя:</span> '+esc(p.displayName)+'</div>';
     if(p.aboutMe)b+='<div><span class="k">о себе:</span> '+esc(p.aboutMe)+'</div>';
     (p.accounts||[]).forEach(function(a){b+='<div><span class="k">'+esc(a.shortname||a.domain)+':</span> <a href="'+esc(a.url)+'" target="_blank">'+esc(a.username)+'</a></div>';});
     b+='<div class="acts"><a href="https://gravatar.com/'+h+'" target="_blank">профиль gravatar</a></div>';
     out.appendChild(card("Gravatar",b));
-  }).catch(function(){});
-  getJson("https://haveibeenpwned.com/unifiedsearch/"+encodeURIComponent(em),10000).then(function(j){
+  }).catch(function(){}));
+  jobs.push(getJson("https://haveibeenpwned.com/unifiedsearch/"+encodeURIComponent(em),10000).then(function(j){
     var br=(j&&j.Breaches)||[];
-    var b=br.length?br.map(function(x){return chip(x.Name+" ("+String(x.BreachDate||"").slice(0,7)+")");}).join(" "):'<span class="good">утечек не найдено</span>';
-    out.appendChild(card("HIBP: утечки ("+br.length+")",b));
-  }).catch(function(){});
-  doh(dom,"MX").then(function(recs){
-    out.appendChild(card("Почтовый провайдер (MX)",esc(recs.map(function(r){return r.data;}).join(", ")||"нет MX")));
-  }).catch(function(){});
-  doh(dom,"TXT").then(function(recs){
-    var txt=recs.map(function(r){return r.data;}).join("\n");
-    var b=/v=spf1/.test(txt)?('<div><span class="k">SPF:</span> '+esc((txt.match(/v=spf1[^"]*/)||[""])[0])+'</div>'):'<div class="k">SPF не найден</div>';
-    out.appendChild(card("SPF",b));
-  }).catch(function(){});
-  doh("_dmarc."+dom,"TXT").then(function(recs){
-    var txt=recs.map(function(r){return r.data;}).join(" ");
-    out.appendChild(card("DMARC",txt?esc(txt):'<span class="k">DMARC не найден</span>'));
-  }).catch(function(){});
-  directJson("https://api.github.com/search/commits?q=author-email:"+em,10000).then(function(j){
-    var items=(j&&j.items)||[];if(!items.length)return;
-    var b=items.slice(0,8).map(function(c){return '<div>'+esc((c.repository&&c.repository.full_name)||"")+' · <a href="'+esc(c.html_url)+'" target="_blank">'+esc(String((c.commit&&c.commit.message)||"").split("\n")[0].slice(0,60))+'</a></div>';}).join("");
-    out.appendChild(card("GitHub: коммиты этим email ("+j.total_count+")",b));
-  }).catch(function(){});
-  prog.textContent="запросы отправлены";
-}
-function doh(name,type){
-  return directJson("https://cloudflare-dns.com/dns-query?name="+encodeURIComponent(name)+"&type="+type,8000,{Accept:"application/dns-json"}).then(function(j){return (j&&j.Answer)||[];});
+    out.appendChild(card("HIBP: утечки ("+br.length+")",br.length?br.map(function(x){return chip(x.Name+" ("+String(x.BreachDate||"").slice(0,7)+")");}).join(" "):'<span class="good">утечек не найдено</span>'));
+  }).catch(function(){}));
+  jobs.push(doh(dom,"MX").then(function(r){out.appendChild(card("Почтовый провайдер (MX)",esc(r.map(function(x){return x.data;}).join(", ")||"нет MX")));}).catch(function(){}));
+  jobs.push(doh(dom,"TXT").then(function(r){
+    var txt=r.map(function(x){return x.data;}).join("\n");
+    out.appendChild(card("SPF",/v=spf1/.test(txt)?esc((txt.match(/v=spf1[^"]*/)||[""])[0]):'<span class="k">SPF не найден</span>'));
+  }).catch(function(){}));
+  jobs.push(doh("_dmarc."+dom,"TXT").then(function(r){var t=r.map(function(x){return x.data;}).join(" ");out.appendChild(card("DMARC",t?esc(t):'<span class="k">DMARC не найден</span>'));}).catch(function(){}));
+  jobs.push(directJson("https://api.github.com/search/commits?q=author-email:"+em,10000).then(function(j){
+    var it=(j&&j.items)||[];if(!it.length)return;
+    out.appendChild(card("GitHub: коммиты этим email ("+j.total_count+")",it.slice(0,8).map(function(c){return '<div>'+esc((c.repository&&c.repository.full_name)||"")+' · <a href="'+esc(c.html_url)+'" target="_blank">'+esc(String((c.commit&&c.commit.message)||"").split("\n")[0].slice(0,60))+'</a></div>';}).join("")));
+  }).catch(function(){}));
+  return Promise.all(jobs).then(function(){prog.textContent="готово";});
 }
 
-/* ---- scan: phone ---- */
-function scanPhone(){
-  var out=$("#out-phone"),prog=$("#prog-phone");
-  out.innerHTML="";
-  var p=normPhone($("#in-phone").value);
-  if(p.nat.length<5){prog.textContent="мало цифр";return;}
+/* ---------- phone ---------- */
+function scanPhone(val,out,prog){
+  out=out||$("#out-phone");prog=prog||$("#prog-phone");
+  if(!out.dataset.keep)out.innerHTML="";
+  var p=normPhone(val!=null?val:$("#in-phone").value);
+  if(p.nat.length<5){prog.textContent="мало цифр";return Promise.resolve();}
   var country=p.cc?(CC[p.cc]||("+"+p.cc)):"неизвестно";
   var op=(p.cc==="7"&&p.nat.length>=3)?(RU_OP[p.nat.slice(0,3)]||""):"";
   var kind=(p.cc==="7"&&p.nat.length===10)?"мобильный":"—";
@@ -443,43 +454,207 @@ function scanPhone(){
      '<a href="https://wa.me/'+esc(p.e164.replace("+",""))+'" target="_blank">WhatsApp</a>'+
      '<a href="https://t.me/+'+esc(p.e164.replace("+",""))+'" target="_blank">Telegram</a>'+
      '<a href="viber://chat?number=%2B'+esc(p.e164.replace("+",""))+'">Viber</a>'+
-     '<button data-copy="'+esc(p.e164)+'">Копировать</button>'+
-     '</div>';
+     '<button data-copy="'+esc(p.e164)+'">Копировать</button></div>';
   out.appendChild(card("Номер телефона",b));
   prog.textContent="готово";
+  return Promise.resolve();
 }
 
-/* ---- scan: domain ---- */
-function scanDom(){
-  var d=$("#in-dom").value.trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/.*$/,"").replace(/^www\./,"");
-  var out=$("#out-dom"),prog=$("#prog-dom");
-  out.innerHTML="";
-  if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)){prog.textContent="неверный домен";return;}
+/* ---------- domain ---------- */
+function scanDom(val,out,prog){
+  out=out||$("#out-dom");prog=prog||$("#prog-dom");
+  var d=String(val!=null?val:$("#in-dom").value).trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/.*$/,"").replace(/^www\./,"");
+  if(!out.dataset.keep)out.innerHTML="";
+  if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)){prog.textContent="неверный домен";return Promise.resolve();}
   prog.textContent="сканирую "+d+" ...";status("скан домена "+d);
-  getJson("https://rdap.org/domain/"+d,10000).then(function(j){
+  var jobs=[];
+  jobs.push(getJson("https://rdap.org/domain/"+d,10000).then(function(j){
     var b="";
     (j.events||[]).forEach(function(e){b+='<div><span class="k">'+esc(e.eventAction)+':</span> '+esc(String(e.eventDate).slice(0,10))+'</div>';});
     if(j.entities)b+='<div><span class="k">роли контактов:</span> '+esc(j.entities.map(function(e){return (e.roles||[]).join("/");}).join(", "))+'</div>';
     if(j.nameservers)b+='<div><span class="k">NS:</span> '+esc(j.nameservers.map(function(n){return n.ldhName;}).join(", "))+'</div>';
     out.appendChild(card("RDAP (whois)",b||"нет данных"));
-  }).catch(function(){out.appendChild(card("RDAP",'<span class="bad">недоступно</span>'));});
-  doh(d,"MX").then(function(r){out.appendChild(card("MX",esc(r.map(function(x){return x.data;}).join(", ")||"нет")));}).catch(function(){});
-  doh(d,"A").then(function(r){
+  }).catch(function(){out.appendChild(card("RDAP",'<span class="bad">недоступно</span>'));}));
+  jobs.push(doh(d,"MX").then(function(r){out.appendChild(card("MX",esc(r.map(function(x){return x.data;}).join(", ")||"нет")));}).catch(function(){}));
+  jobs.push(doh(d,"A").then(function(r){
     var ip=(r[0]&&r[0].data)||"";if(!ip)return;
-    out.appendChild(card("A-запись",esc(ip)));
-    directJson("https://ipwho.is/"+ip,8000).then(function(g){
-      if(g&&g.country)out.appendChild(card("IP-гео",esc(g.country+" · "+(g.city||"")+" · "+(g.connection&&g.connection.isp||""))));
+    out.appendChild(card("IP-адрес сервера",esc(ip)));
+    return directJson("https://ipwho.is/"+ip,8000).then(function(g){
+      if(g&&g.country)out.appendChild(card("Гео IP",esc(g.country+" · "+(g.city||"")+" · "+((g.connection&&g.connection.isp)||""))));
     }).catch(function(){});
-  }).catch(function(){});
-  getJson("https://crt.sh/?q=%25."+d+"&output=json",12000).then(function(j){
+  }).catch(function(){}));
+  jobs.push(getJson("https://crt.sh/?q=%25."+d+"&output=json",12000).then(function(j){
     var names={};(j||[]).forEach(function(x){String(x.name_value||"").split("\n").forEach(function(n){names[n]=1;});});
     var list=Object.keys(names).slice(0,40);
     out.appendChild(card("Поддомены (crt.sh): "+list.length,list.map(esc).join("\n")));
-  }).catch(function(){});
-  prog.textContent="запросы отправлены";
+  }).catch(function(){}));
+  return Promise.all(jobs).then(function(){prog.textContent="готово";});
 }
 
-/* ---- diagnostics ---- */
+/* ---------- aliases / past nicks ---------- */
+function findAliases(q,out){
+  var res=[];
+  function add(site,val){if(val)res.push(site+": "+val);}
+  var jobs=[
+    directJson("https://api.github.com/users/"+q,9000).then(function(j){if(j&&j.login)add("GitHub",(j.name||"")+" @"+j.login);}).catch(function(){}),
+    directJson("https://api.github.com/users/"+q+"/events/public",9000).then(function(j){
+      var names={},mails={};
+      (j||[]).slice(0,60).forEach(function(e){
+        var c=e.commit;if(!c)return;
+        if(c.author&&c.author.name)names[c.author.name]=1;
+        if(c.author&&c.author.email)mails[c.author.email]=1;
+      });
+      if(Object.keys(names).length)add("GitHub: имена в коммитах",Object.keys(names).slice(0,6).join(", "));
+      if(Object.keys(mails).length)add("GitHub: email в коммитах",Object.keys(mails).slice(0,6).join(", "));
+    }).catch(function(){}),
+    directJson("https://gitlab.com/api/v4/users?username="+q,9000).then(function(j){if(j&&j[0])add("GitLab",(j[0].name||"")+" @"+j[0].username);}).catch(function(){}),
+    directJson("https://www.reddit.com/user/"+q+"/about.json",9000).then(function(j){if(j&&j.data)add("Reddit","u/"+j.data.name+(j.data.subreddit&&j.data.subreddit.title?" ("+j.data.subreddit.title+")":""));}).catch(function(){}),
+    directJson("https://mastodon.social/api/v1/accounts/lookup?acct="+q,9000).then(function(j){if(j&&j.username)add("Mastodon",(j.display_name||"")+" @"+j.username);}).catch(function(){}),
+    directJson("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor="+q+".bsky.social",9000).then(function(j){if(j&&j.handle)add("Bluesky",(j.displayName||"")+" "+j.handle);}).catch(function(){}),
+    directJson("https://api.chess.com/pub/player/"+q,9000).then(function(j){if(j&&j.username)add("Chess.com",j.name||j.username);}).catch(function(){}),
+    directJson("https://keybase.io/_/api/1.0/user/lookup.json?username="+q,9000).then(function(j){var t=j&&j.them&&j.them[0];if(t)add("Keybase",((t.profile&&t.profile.full_name)||"")+" @"+q);}).catch(function(){}),
+    directJson("https://gravatar.com/"+md5(q.toLowerCase())+".json",9000).then(function(j){
+      var p=j&&j.entry&&j.entry[0];if(!p)return;
+      if(p.displayName)add("Gravatar",p.displayName);
+      (p.accounts||[]).forEach(function(a){add("Gravatar → "+(a.shortname||a.domain),a.username);});
+    }).catch(function(){}),
+    api("https://t.me/"+q,9000).then(function(h){var t=meta2(h,"og:title");if(t)add("Telegram",t+" (@"+q+")");}).catch(function(){})
+  ];
+  return Promise.all(jobs).then(function(){
+    var b=res.length?res.map(function(x){return '<div>'+esc(x)+'</div>';}).join(""):'<span class="k">алиасы не найдены</span>';
+    b+='<div class="k" style="margin-top:6px">прошлые ники Telegram веб-версия не отдаёт — это все найденные имена/хендлы, которыми пользователь подписывался в других сервисах.</div>';
+    out.appendChild(card("Прошлые ники / алиасы",b));
+  });
+}
+
+/* ---------- IP ---------- */
+function visitorIP(out){
+  return directJson("https://ipwho.is/",8000).then(function(g){
+    if(!g||!g.ip)return;
+    var b='<div><span class="k">ваш IP:</span> '+esc(g.ip)+'</div>';
+    b+='<div><span class="k">гео:</span> '+esc((g.country||"")+" · "+(g.city||"")+" · "+((g.connection&&g.connection.isp)||""))+'</div>';
+    var e=$("#myip");if(e)e.textContent="ваш IP: "+g.ip;
+    if(out)out.appendChild(card("IP-адрес (ваш)",b));
+  }).catch(function(){
+    var e=$("#myip");if(e)e.textContent="ваш IP: не определён";
+  });
+}
+
+/* ---------- full report ---------- */
+function detect(q){
+  q=q.trim();
+  if(/^https?:\/\/|^t\.me\/|^@/.test(q))return "tg";
+  if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(q))return "mail";
+  if(/^\+?[\d\s\-\(\)]{9,}$/.test(q))return "phone";
+  if(/^[a-z0-9.-]+\.[a-z]{2,}$/.test(q))return "dom";
+  return "nick";
+}
+function fullReport(){
+  var q=$("#in-rep").value.trim(),out=$("#out-rep"),prog=$("#prog-rep");
+  out.innerHTML="";
+  if(!q){prog.textContent="введите что искать";return;}
+  var t=detect(q);
+  prog.textContent="определён тип: "+({tg:"telegram",nick:"ник",mail:"email",phone:"телефон",dom:"домен"}[t])+" · собираю данные ...";
+  status("полный отчёт");
+  var chain;
+  if(t==="tg")chain=scanTg(q,out,prog).then(function(){return scanNick(q,out,prog);});
+  else if(t==="nick")chain=scanNick(q,out,prog).then(function(){return scanTg(q,out,prog);});
+  else if(t==="mail")chain=scanMail(q,out,prog);
+  else if(t==="phone")chain=scanPhone(q,out,prog);
+  else chain=scanDom(q,out,prog);
+  chain.then(function(){return findAliases(q,out);})
+       .then(function(){return visitorIP(out);})
+       .then(function(){
+         var a=document.createElement("div");a.className="card";
+         a.innerHTML='<div class="ct">Действия с отчётом</div><div class="cb"><div class="acts">'+
+           '<button class="call" data-shot="1">СКРИН (PNG)</button>'+
+           '<button data-share="1">Отправить / поделиться</button>'+
+           '<button data-text="1">Скопировать текст</button></div></div>';
+         out.insertBefore(a,out.firstChild);
+         prog.textContent="отчёт готов · "+out.querySelectorAll(".card").length+" блоков";
+         status("отчёт готов","good");
+       });
+}
+
+/* ---------- screenshot ---------- */
+function wrapTxt(ctx,text,maxW){
+  var words=String(text).split(/\s+/),line="",out=[];
+  words.forEach(function(w){
+    var t=line?line+" "+w:w;
+    if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w;}else line=t;
+  });
+  if(line)out.push(line);
+  return out;
+}
+function buildCanvas(){
+  var cards=[].slice.call(document.querySelectorAll("#out-rep .card"));
+  if(!cards.length)return null;
+  var W=1000,pad=28;
+  var lines=[];
+  lines.push({t:"OSINT ОТЧЁТ",s:30,c:"#3ba3ff",b:1});
+  lines.push({t:"запрос: "+$("#in-rep").value+"   ·   "+new Date().toLocaleString("ru-RU"),s:15,c:"#7d8fa3"});
+  lines.push({t:"",s:8,c:"#000"});
+  cards.forEach(function(c){
+    var ct=c.querySelector(".ct").textContent.trim();
+    var cb=c.querySelector(".cb").textContent.replace(/\n{2,}/g,"\n").trim();
+    lines.push({t:"▌ "+ct.toUpperCase(),s:17,c:"#3ba3ff",b:1});
+    cb.split("\n").forEach(function(l){lines.push({t:l,s:15,c:"#dbe6f2"});});
+    lines.push({t:"",s:8,c:"#000"});
+  });
+  var meas=document.createElement("canvas").getContext("2d");
+  meas.font="15px monospace";
+  var wrapped=[];
+  lines.forEach(function(l){
+    meas.font=(l.b?"bold ":"")+l.s+"px "+(l.b?"sans-serif":"monospace");
+    if(!l.t){wrapped.push(l);return;}
+    wrapTxt(meas,l.t,W-pad*2).forEach(function(w,i){wrapped.push({t:w,s:l.s,c:l.c,b:l.b&&i===0});});
+  });
+  var H=pad;wrapped.forEach(function(l){H+=(l.s||14)+8;});H+=pad;
+  var cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  var ctx=cv.getContext("2d");
+  ctx.fillStyle="#0b0f14";ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#111823";ctx.fillRect(12,12,W-24,H-24);
+  var y=pad+18;
+  wrapped.forEach(function(l){
+    y+=(l.s||14)+8;
+    ctx.font=(l.b?"bold ":"")+l.s+"px "+(l.b?"sans-serif":"monospace");
+    ctx.fillStyle=l.c||"#dbe6f2";
+    ctx.fillText(l.t,pad,y);
+  });
+  return cv;
+}
+function shot(){
+  var cv=buildCanvas();
+  if(!cv){alert("сначала построй отчёт");return;}
+  try{
+    var a=document.createElement("a");
+    a.download="osint-report-"+Date.now()+".png";
+    a.href=cv.toDataURL("image/png");
+    document.body.appendChild(a);a.click();a.remove();
+  }catch(e){showErr("скрин: "+e.message);}
+}
+function shareShot(){
+  var cv=buildCanvas();
+  if(!cv){alert("сначала построй отчёт");return;}
+  cv.toBlob(function(blob){
+    var f=new File([blob],"osint-report.png",{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      navigator.share({files:[f],title:"OSINT отчёт",text:"Отчёт по "+$("#in-rep").value}).catch(function(){});
+    }else{
+      shot();
+    }
+  },"image/png");
+}
+function copyText(){
+  var cards=[].slice.call(document.querySelectorAll("#out-rep .card"));
+  if(!cards.length){alert("сначала построй отчёт");return;}
+  var t="OSINT ОТЧЁТ — "+$("#in-rep").value+"\n"+new Date().toLocaleString("ru-RU")+"\n\n";
+  cards.forEach(function(c){t+="## "+c.querySelector(".ct").textContent.trim()+"\n"+c.querySelector(".cb").textContent.trim()+"\n\n";});
+  try{navigator.clipboard.writeText(t);}catch(e){}
+  alert("текст отчёта скопирован");
+}
+
+/* ---------- diagnostics ---------- */
 function diag(){
   var out=$("#out-net"),prog=$("#prog-net");out.innerHTML="";
   var tests=[
@@ -490,8 +665,7 @@ function diag(){
     ["GitHub API (direct)",function(){return fetchT("https://api.github.com/users/torvalds",8000);}],
     ["Cloudflare DoH (direct)",function(){return fetchT("https://cloudflare-dns.com/dns-query?name=example.com&type=MX",8000,{Accept:"application/dns-json"});}]
   ];
-  prog.textContent="тестирую "+tests.length+" каналов ...";
-  var done=0;
+  prog.textContent="тестирую "+tests.length+" каналов ...";var done=0;
   tests.forEach(function(t){
     var t0=Date.now();
     t[1]().then(function(){done++;out.appendChild(card(t[0],'<span class="good">OK · '+(Date.now()-t0)+' мс</span>'));prog.textContent="проверено "+done+"/"+tests.length;})
@@ -499,29 +673,38 @@ function diag(){
   });
 }
 
-/* ---- ui ---- */
-var curTab="tg";
+/* ---------- ui ---------- */
+var curTab="rep";
 function setTab(t){
   curTab=t;
-  Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(b){b.className=b.getAttribute("data-tab")===t?"on":"";});
+  Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(b){b.className=(b.getAttribute("data-tab")===t?"on":"")+(b.getAttribute("data-tab")==="rep"?" hot":"");});
   Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(s){s.className="tab"+(s.id==="tab-"+t?" on":"");});
 }
 function doAct(a){
   if(a==="demo"){
-    if(curTab==="tg")$("#in-tg").value="durov";
+    if(curTab==="rep")$("#in-rep").value="durov";
+    else if(curTab==="tg")$("#in-tg").value="durov";
     else if(curTab==="nick")$("#in-nick").value="torvalds";
     else if(curTab==="mail")$("#in-mail").value="torvalds@linux-foundation.org";
     else if(curTab==="phone")$("#in-phone").value="+7 999 123-45-67";
     else if(curTab==="dom")$("#in-dom").value="github.com";
     echo("демо "+curTab);return;
   }
-  if(a==="tg")scanTg();else if(a==="nick")scanNick();else if(a==="mail")scanMail();
-  else if(a==="phone")scanPhone();else if(a==="dom")scanDom();else if(a==="net")diag();
+  if(a==="rep")fullReport();
+  else if(a==="tg")scanTg();
+  else if(a==="nick")scanNick();
+  else if(a==="mail")scanMail();
+  else if(a==="phone")scanPhone();
+  else if(a==="dom")scanDom();
+  else if(a==="net")diag();
 }
 document.addEventListener("click",function(e){
   var t=e.target;if(!t||!t.closest)return;
   var cp=t.closest("[data-copy]");
-  if(cp){var v=cp.getAttribute("data-copy");try{navigator.clipboard.writeText(v);}catch(x){}cp.textContent="скопировано";setTimeout(function(){cp.textContent="Копировать";},1500);return;}
+  if(cp){try{navigator.clipboard.writeText(cp.getAttribute("data-copy"));}catch(x){}cp.textContent="скопировано";setTimeout(function(){cp.textContent="Копировать";},1500);return;}
+  if(t.closest("[data-shot]")){shot();return;}
+  if(t.closest("[data-share]")){shareShot();return;}
+  if(t.closest("[data-text]")){copyText();return;}
   var nk=t.closest("[data-nick]");
   if(nk){var n=nk.getAttribute("data-nick");setTab("nick");$("#in-nick").value=n;echo("ник из телеги "+n);scanNick();return;}
   var tb=t.closest("[data-tab]");
@@ -531,14 +714,14 @@ document.addEventListener("click",function(e){
 });
 document.addEventListener("keydown",function(e){
   if(e.key!=="Enter")return;
-  var t=e.target;if(t&&t.getAttribute&&t.getAttribute("data-enter")){doAct(t.getAttribute("data-enter"));}
+  var t=e.target;if(t&&t.getAttribute&&t.getAttribute("data-enter"))doAct(t.getAttribute("data-enter"));
 });
 var phTimer=null;
 document.addEventListener("input",function(e){
-  if(e.target&&e.target.id==="in-phone"){clearTimeout(phTimer);phTimer=setTimeout(scanPhone,400);}
+  if(e.target&&e.target.id==="in-phone"){clearTimeout(phTimer);phTimer=setTimeout(function(){scanPhone();},400);}
 });
-status("ЗАПУЩЕН","good");
-echo("готов");
+status("ЗАПУЩЕН","good");echo("готов");
+visitorIP(null);
 })();
 </script>
 </body>
