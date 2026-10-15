@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OSINT scanner</title>
+</head>
+<body>
+<script>
+window.__errs=[];
+window.onerror=function(m,s,l){
+  window.__errs.push(m+' @'+l);
+  var e=document.getElementById('eng');
+  if(e){e.innerHTML='<b style="color:#ff6b6b">ОШИБКА JS: '+m+' (строка '+l+')</b>';}
+  return false;
+};
+</script>
+
 <style>
 :root{--bg:#0a0f11;--bg2:#0e1518;--card:#101a1d;--line:#1c2a2e;--txt:#d8e6e3;--dim:#7d9491;--acc:#3ddc97;--acc2:#4bb8ff;--warn:#ffc247;--bad:#ff6b6b;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}
@@ -13,13 +25,13 @@ body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.55 var(--mono);p
 .brand i{color:var(--dim);font-style:normal}
 .hdr{display:flex;gap:6px;align-items:center}
 select,input,button{font:inherit;color:var(--txt);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;outline:none}
-select:focus,input:focus{border-color:var(--acc)}
 button{cursor:pointer}
 button:hover{border-color:var(--acc);color:var(--acc)}
 button.primary{background:var(--acc);color:#04231a;border-color:var(--acc);font-weight:500}
 button.mini{padding:4px 8px;font-size:11px}
 button:disabled{opacity:.45}
-#eng{font-size:11.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--card);margin:10px 0 0}
+#eng{font-size:11.5px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--card);margin:10px 0 0}
+#echo{font-size:11px;padding:6px 9px;border:1px solid #1f4a3c;border-radius:6px;background:#0d1a16;margin-top:6px;color:var(--acc)}
 .tabs{display:flex;flex-wrap:wrap;gap:5px;margin:11px 0}
 .tabs button{padding:5px 10px;font-size:12px;background:transparent}
 .tabs button.on{background:var(--acc);color:#04231a;border-color:var(--acc);font-weight:500}
@@ -65,42 +77,42 @@ a{color:var(--acc2)}
 .badge.ok{color:var(--acc);border-color:#1f4a3c}.badge.bad{color:var(--bad);border-color:#4a1f1f}
 .prog{height:4px;background:var(--bg2);border-radius:3px;overflow:hidden;margin:8px 0}
 .prog>div{height:100%;width:0;background:var(--acc);transition:.2s}
+#log{font-size:11px;color:var(--dim);word-break:break-word}
 </style>
-</head>
-<body>
 
 <div class="hd">
   <div class="brand">OSINT<i>·scanner</i></div>
   <div class="hdr">
     <span id="netdot" class="sdot" style="background:#3a4a4d"></span>
-    <select id="proxySel" onchange="APP.setRelay(this.value)">
+    <select id="relaySel" data-change="relay">
       <option value="codetabs">релей: codetabs</option>
       <option value="aoraw">релей: allorigins</option>
       <option value="corsproxy">релей: corsproxy</option>
       <option value="jina">релей: jina</option>
     </select>
-    <button class="mini" onclick="APP.exportJson()">JSON</button>
+    <button class="mini" data-act="exportJson">JSON</button>
   </div>
 </div>
 <div id="eng">движок: не запустился</div>
+<div id="echo">эхо кликов: нажми любую кнопку — тут появится запись</div>
 <div id="banner"></div>
 
 <div class="tabs" id="tabs">
-  <button data-t="nick" class="on" onclick="APP.tab('nick')">ник</button>
-  <button data-t="tg" onclick="APP.tab('tg')">канал / telegram</button>
-  <button data-t="email" onclick="APP.tab('email')">email</button>
-  <button data-t="phone" onclick="APP.tab('phone')">телефон</button>
-  <button data-t="net" onclick="APP.tab('net')">домен / ip</button>
-  <button data-t="leak" onclick="APP.tab('leak')">утечки</button>
-  <button data-t="bulk" onclick="APP.tab('bulk')">масс-скан</button>
-  <button data-t="diag" onclick="APP.tab('diag')">связь</button>
+  <button data-act="tab" data-tab="nick" class="on">ник</button>
+  <button data-act="tab" data-tab="tg">канал / telegram</button>
+  <button data-act="tab" data-tab="email">email</button>
+  <button data-act="tab" data-tab="phone">телефон</button>
+  <button data-act="tab" data-tab="net">домен / ip</button>
+  <button data-act="tab" data-tab="leak">утечки</button>
+  <button data-act="tab" data-tab="bulk">масс-скан</button>
+  <button data-act="tab" data-tab="diag">связь</button>
 </div>
 
 <div class="panel on" id="p-nick">
   <div class="bar">
-    <input type="text" id="nickIn" placeholder="username (без @)" onkeydown="APP.enter(event,'APP.nick()')">
-    <button class="primary" onclick="APP.nick()">Сканировать</button>
-    <button onclick="APP.demo()">демо</button>
+    <input type="text" id="nickIn" data-enter="nick" placeholder="username (без @)">
+    <button class="primary" data-act="nick">Сканировать</button>
+    <button data-act="demo">демо</button>
   </div>
   <div class="hint">25 сервисов напрямую через их API. Результаты появляются сразу.</div>
   <div id="nickStat" class="stat" style="margin-bottom:8px"></div>
@@ -109,18 +121,18 @@ a{color:var(--acc2)}
 
 <div class="panel" id="p-tg">
   <div class="bar">
-    <input type="text" id="tgIn" placeholder="https://t.me/канал или @username" onkeydown="APP.enter(event,'APP.tg()')">
-    <button class="primary" onclick="APP.tg()">Разобрать</button>
-    <button onclick="APP.tgDeep()">глубокий разбор</button>
+    <input type="text" id="tgIn" data-enter="tg" placeholder="https://t.me/канал или @username">
+    <button class="primary" data-act="tg">Разобрать</button>
+    <button data-act="tgDeep">глубокий разбор</button>
   </div>
-  <div class="hint">Вставляй ссылку на канал, группу, бота или профиль. Достаёт название, описание, аватар, подписчиков, активность, посты, хэштеги, ссылки — и <b>вычисляет вероятных админов и создателя</b> по контактам в описании и постах. «Глубокий разбор» дополнительно пролистывает историю вглубь, чтобы дойти до первых постов.</div>
+  <div class="hint">Вставляй ссылку на канал, группу, бота или профиль. Достаёт название, описание, аватар, подписчиков, активность, посты, хэштеги, ссылки — и вычисляет вероятных админов и создателя. «Глубокий разбор» листает историю вглубь до первых постов.</div>
   <div id="tgOut"></div>
 </div>
 
 <div class="panel" id="p-email">
   <div class="bar">
-    <input type="text" id="emIn" placeholder="mail@example.com" onkeydown="APP.enter(event,'APP.email()')">
-    <button class="primary" onclick="APP.email()">Проверить</button>
+    <input type="text" id="emIn" data-enter="email" placeholder="mail@example.com">
+    <button class="primary" data-act="email">Проверить</button>
   </div>
   <div class="hint">MX/SPF/DMARC, Gravatar, HIBP, LeakCheck, кандидаты ников.</div>
   <div id="emOut"></div>
@@ -128,8 +140,8 @@ a{color:var(--acc2)}
 
 <div class="panel" id="p-phone">
   <div class="bar">
-    <input type="text" id="phIn" placeholder="+7 999 123-45-67" onkeydown="APP.enter(event,'APP.phone()')">
-    <button class="primary" onclick="APP.phone()">Разобрать</button>
+    <input type="text" id="phIn" data-enter="phone" placeholder="+7 999 123-45-67">
+    <button class="primary" data-act="phone">Разобрать</button>
   </div>
   <div class="hint">Работает офлайн: страна, оператор РФ, E.164, ссылки на чекеры.</div>
   <div id="phOut"></div>
@@ -137,8 +149,8 @@ a{color:var(--acc2)}
 
 <div class="panel" id="p-net">
   <div class="bar">
-    <input type="text" id="netIn" placeholder="example.com или 8.8.8.8" onkeydown="APP.enter(event,'APP.net()')">
-    <button class="primary" onclick="APP.net()">Разобрать</button>
+    <input type="text" id="netIn" data-enter="net" placeholder="example.com или 8.8.8.8">
+    <button class="primary" data-act="net">Разобрать</button>
   </div>
   <div class="hint">DNS, RDAP/whois, гео IP.</div>
   <div id="netOut"></div>
@@ -146,8 +158,8 @@ a{color:var(--acc2)}
 
 <div class="panel" id="p-leak">
   <div class="bar">
-    <input type="text" id="leakIn" placeholder="домен или email" onkeydown="APP.enter(event,'APP.leak()')">
-    <button class="primary" onclick="APP.leak()">Искать</button>
+    <input type="text" id="leakIn" data-enter="leak" placeholder="домен или email">
+    <button class="primary" data-act="leak">Искать</button>
   </div>
   <div class="hint">База HIBP: утечки сайта и утечки email.</div>
   <div id="leakOut"></div>
@@ -155,10 +167,10 @@ a{color:var(--acc2)}
 
 <div class="panel" id="p-bulk">
   <div class="bar">
-    <input type="text" id="bulkIn" placeholder="username" onkeydown="APP.enter(event,'APP.bulk()')">
+    <input type="text" id="bulkIn" data-enter="bulk" placeholder="username">
     <select id="bulkPreset"><option value="top">топ-80</option><option value="pop" selected>популярные ~250</option><option value="all">полный ~600</option></select>
-    <button class="primary" onclick="APP.bulk()">Старт</button>
-    <button onclick="APP.bulkStop()">Стоп</button>
+    <button class="primary" data-act="bulk">Старт</button>
+    <button data-act="bulkStop">Стоп</button>
   </div>
   <div class="hint">Регистрация ника на сотнях сайтов (WhatsMyName).</div>
   <div id="bulkProg" style="display:none"><div class="prog"><div id="bulkBar"></div></div><div class="stat" id="bulkStat"></div></div>
@@ -166,26 +178,25 @@ a{color:var(--acc2)}
 </div>
 
 <div class="panel" id="p-diag">
-  <div class="bar"><button class="primary" onclick="APP.diag()">Проверить связь</button><span class="stat" id="diagWhen"></span></div>
+  <div class="bar"><button class="primary" data-act="diag">Проверить связь</button><span class="stat" id="diagWhen"></span></div>
   <div class="hint">Показывает, что доступно из твоей сети.</div>
   <div id="diagOut"></div>
 </div>
 
 <div class="sect">лог</div>
-<div id="log" class="stat" style="padding-bottom:20px">загрузка...</div>
+<div id="log" class="stat">загрузка...</div>
 
 <script>
-window.APP=(function(){
+(function(){
 "use strict";
 var $=function(s,r){return (r||document).querySelector(s);};
 var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
 function log(m){var e=$('#log');if(e)e.textContent=m;}
+function echo(m){var e=$('#echo');if(e)e.textContent='эхо кликов: '+m;}
 function banner(m){var b=$('#banner');if(!b)return;if(!m){b.style.display='none';return;}b.style.display='block';b.innerHTML=m;}
 function setNet(ok){var d=$('#netdot');if(d)d.style.background=ok?'#3ddc97':'#ff6b6b';}
-window.onerror=function(m,s,l){banner('ошибка: '+esc(m)+' стр.'+l);};
 
-/* ---- MD5 ---- */
 function md5(str){
   function add(x,y){var l=(x&0xFFFF)+(y&0xFFFF);var m=(x>>16)+(y>>16)+(l>>16);return (m<<16)|(l&0xFFFF);}
   function rol(n,c){return (n<<c)|(n>>>(32-c));}
@@ -225,7 +236,6 @@ function md5(str){
   return hx;
 }
 
-/* ---------- СЕТЬ ---------- */
 var PROXIES={
   codetabs:{w:function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u);},p:function(r){return r.text().then(function(t){return {status:r.status,text:t};});}},
   aoraw:{w:function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u);},p:function(r){return r.text().then(function(t){return {status:r.status,text:t};});}},
@@ -265,7 +275,6 @@ function smart(url,o){o=o||{};return direct(url,o).then(function(r){return r.sta
 function cget(k){try{var v=localStorage.getItem('os_'+k);if(!v)return null;var o=JSON.parse(v);return o.e<Date.now()?null:o.d;}catch(e){return null;}}
 function cset(k,d,ttl){try{localStorage.setItem('os_'+k,JSON.stringify({d:d,e:Date.now()+ttl}));}catch(e){}}
 
-/* ---------- РЕНДЕР ---------- */
 var RESULTS=[];
 function card(o){
   var rows=(o.rows||[]).filter(function(r){return r&&r[1]!==undefined&&r[1]!==null&&r[1]!==''&&r[1]!==false;})
@@ -277,7 +286,6 @@ function card(o){
 function kv(p){return '<div class="kv">'+p.map(function(x){return '<div class="box"><div class="l">'+esc(x[0])+'</div><div class="v">'+esc(x[1]||'—')+'</div></div>';}).join('')+'</div>';}
 function push(k,d){var o={kind:k};for(var i in d)o[i]=d[i];RESULTS.push(o);}
 
-/* ---------- ИСТОЧНИКИ НИКА ---------- */
 function api(id,name,cat,urlFn,okFn,rowsFn,linkFn){return {id:id,name:name,cat:cat,run:function(u){
   var url=urlFn(u);
   return smart(url).then(function(r){
@@ -287,6 +295,7 @@ function api(id,name,cat,urlFn,okFn,rowsFn,linkFn){return {id:id,name:name,cat:c
     if(!j||!okFn(j))return {found:false};
     return {found:true,rows:rowsFn(j),link:linkFn?linkFn(j):url};
   });};};}
+
 var SRC=[
 api('github','GitHub','код',function(u){return 'https://api.github.com/users/'+u;},function(j){return j&&j.login;},
  function(j){return [['имя',j.name],['био',j.bio],['компания',j.company],['локация',j.location],['сайт',j.blog],['репо',j.public_repos],['подписчиков',j.followers],['создан',(j.created_at||'').slice(0,10)]];},function(j){return j.html_url;}),
@@ -351,21 +360,18 @@ var TOP=['GitHub','GitLab','Bitbucket','Twitter','Instagram','Reddit','TikTok','
 function extLinks(q){
   var L=[['google','https://www.google.com/search?q=%22'+encodeURIComponent(q)+'%22'],
   ['яндекс','https://yandex.ru/search/?text='+encodeURIComponent(q)],
-  ['yandex people','https://yandex.ru/people?text='+encodeURIComponent(q)],
   ['whatsmyname','https://whatsmyname.app/?q='+encodeURIComponent(q)],
   ['tgstat','https://tgstat.ru/channel/@'+encodeURIComponent(q)],
   ['telemetr','https://telemetr.me/channels/@'+encodeURIComponent(q)],
-  ['duckduckgo','https://duckduckgo.com/?q='+encodeURIComponent(q)],
-  ['github','https://github.com/search?q='+encodeURIComponent(q)+'&type=users']];
+  ['duckduckgo','https://duckduckgo.com/?q='+encodeURIComponent(q)]];
   return '<div>'+L.map(function(l){return '<a class="lnk" href="'+l[1]+'" target="_blank" rel="noopener">'+l[0]+'</a>';}).join('')+'</div>';
 }
 
-/* ---------- СКАН НИКА ---------- */
 var busy=false;
 function runNick(raw){
   if(busy){log('скан уже идёт');return;}
   var u=String(raw||'').trim().replace(/^@/,'').replace(/^https?:\/\/t\.me\//,'').replace(/\/$/,'');
-  if(!u)return;
+  if(!u){log('пустой ник');return;}
   busy=true;
   var box=$('#nickOut'),stat=$('#nickStat');
   var cards=[],found=[],done=0;
@@ -376,14 +382,13 @@ function runNick(raw){
       +'<div class="sect">остальные</div><div class="grid">'+cards.join('')+'</div>'
       +'<div class="sect">внешние</div>'+extLinks(u);
   }
-  var tasks=SRC.map(function(s){
+  Promise.all(SRC.map(function(s){
     return s.run(u).then(function(r){
       var html=card({site:s.name,cat:s.cat,status:r.found?'ok':'no',rows:r.rows,link:r.link,note:r.note});
       if(r.found)found.push({site:s.name,url:r.link,html:html}); else cards.push(html);
     },function(e){cards.push(card({site:s.name,cat:s.cat,status:'err',note:String(e.message||e)}));})
     .then(function(){done++;flush();});
-  });
-  Promise.all(tasks).then(function(){
+  })).then(function(){
     found.sort(function(a,b){return a.site.localeCompare(b.site);});
     flush();
     stat.innerHTML='готово: найдено <b style="color:#3ddc97">'+found.length+'</b> из '+SRC.length;
@@ -392,25 +397,19 @@ function runNick(raw){
   });
 }
 
-/* ---------- TELEGRAM: КАНАЛ ---------- */
 var ADMIN_RE=/админ|создател|автор|владел|основател|связь|контакт|реклам|сотруднич|вопрос|писать|пиши|обратн|менеджер|прайс|биржа|взаимн|contact|admin|owner|feedback|promo|sales|partnership|support/i;
 function txtOf(d,sel){var e=d.querySelector(sel);return e?(e.textContent||'').trim():'';}
 function parsePage(html){
   var d=new DOMParser().parseFromString(html||'','text/html');
   function meta(p){var e=d.querySelector('meta[property="og:'+p+'"]');return e?e.content:'';}
-  return {title:meta('title'),desc:meta('description'),img:meta('image'),
-    extra:txtOf(d,'.tgme_page_extra'),
-    hasPic:!!d.querySelector('.tgme_page_photo_image img,.tgme_page_photo img'),
-    verified:!!d.querySelector('.verified-icon'),
-    ctx:(d.querySelector('.tgme_page_context_link')||{}).href||'',
-    ctxText:txtOf(d,'.tgme_page_context_link')};
+  return {title:meta('title'),desc:meta('description'),img:meta('image'),extra:txtOf(d,'.tgme_page_extra'),
+    hasPic:!!d.querySelector('.tgme_page_photo_image img,.tgme_page_photo img'),verified:!!d.querySelector('.verified-icon'),
+    ctx:(d.querySelector('.tgme_page_context_link')||{}).href||'',ctxText:txtOf(d,'.tgme_page_context_link')};
 }
 function parseChan(html){
   var d=new DOMParser().parseFromString(html||'','text/html');
-  var info={title:txtOf(d,'.tgme_channel_info_header_title'),
-    username:txtOf(d,'.tgme_channel_info_header_username'),
-    desc:txtOf(d,'.tgme_channel_info_description'),
-    counters:[],posts:[]};
+  var info={title:txtOf(d,'.tgme_channel_info_header_title'),username:txtOf(d,'.tgme_channel_info_header_username'),
+    desc:txtOf(d,'.tgme_channel_info_description'),counters:[],posts:[]};
   $$('.tgme_channel_info_counter',d).forEach(function(c){info.counters.push((c.textContent||'').trim());});
   $$('.tgme_widget_message',d).forEach(function(w){
     var t=w.querySelector('.tgme_widget_message_text'),tm=w.querySelector('time'),v=w.querySelector('.tgme_widget_message_views');
@@ -438,11 +437,11 @@ function tgId(raw){
 }
 function runTg(deep){
   var id=tgId($('#tgIn').value),box=$('#tgOut');
-  if(!id){box.innerHTML='<div class="empty">вставь ссылку вида t.me/канал или @username</div>';return;}
+  if(!id){box.innerHTML='<div class="empty">вставь ссылку вида t.me/канал или @username</div>';log('tg: пусто');return;}
   var isInvite=id.charAt(0)==='+';
-  box.innerHTML='<div class="empty"><span class="pulse"></span> разбираю '+esc(id)+(deep?', пролистываю историю':'')+'...</div>';
-  var acc={users:{},mails:{},dom:{},tags:{}};
-  var scores={},descText='',page=null,pages=[],chain=Promise.resolve();
+  box.innerHTML='<div class="empty"><span class="pulse"></span> разбираю '+esc(id)+(deep?', листаю историю':'')+'...</div>';
+  log('tg: работаю по '+id);
+  var acc={users:{},mails:{},dom:{},tags:{}},scores={},descText='',page=null,pages=[],chain=Promise.resolve();
 
   if(!isInvite){
     chain=chain.then(function(){return pf('https://t.me/'+id,{timeout:11000}).then(function(r){page=parsePage(r.text);descText=page.desc||'';harvest(descText,acc);},function(e){throw new Error('страница не открылась: '+e.message);});});
@@ -489,52 +488,48 @@ function runTg(deep){
         +'<div><div style="font-size:15px">'+esc(info.title||(page?page.title:''))+' '+((page&&page.verified)?'<span class="tag p">verified</span>':'')+'</div>'
         +'<div class="stat">@'+esc(id)+(info.username?' · '+esc(info.username):'')+'</div>'
         +'<a class="lnk" href="https://t.me/'+esc(id)+'" target="_blank" rel="noopener">открыть в telegram</a>'
-        +(isInvite?' <span class="tag w">инвайт-ссылка</span>':'')+'</div></div>';
+        +(isInvite?' <span class="tag w">инвайт</span>':'')+'</div></div>';
       html+='<div class="sect">карточка</div><div class="grid">'
         +card({site:'основное',status:'ok',rows:[['название',info.title||(page?page.title:'')],['юзернейм','@'+id],['тип',isInvite?'приватный/инвайт':(info.posts.length?'канал':'профиль/группа')],['подписчиков',subs?subs.toLocaleString('ru'):''],['метрика',page?page.extra:''],['verified',(page&&page.verified)?'да':'']]})
         +((info.desc||descText)?card({site:'описание',status:'ok',rows:[['текст',(info.desc||descText).slice(0,600)]]}):'')
-        +((page&&page.ctx)?card({site:'связанный чат',status:'ok',rows:[['ссылка',page.ctx],['текст',page.ctxText]],link:page.ctx}):'')
-        +'</div>';
+        +((page&&page.ctx)?card({site:'связанный чат',status:'ok',rows:[['ссылка',page.ctx],['текст',page.ctxText]],link:page.ctx}):'')+'</div>';
       if(posts.length){
         html+='<div class="sect">активность (просмотрено '+posts.length+' постов)</div><div class="grid">'
-          +card({site:'динамика',status:'ok',rows:[['первый пост',dates[0]&&dates[0].slice(0,10)],['последний пост',dates[dates.length-1]&&dates[dates.length-1].slice(0,10)],['средние просмотры',views.length?Math.round(views.reduce(function(a,b){return a+b;},0)/views.length).toLocaleString('ru'):''],['макс. просмотры',views.length?Math.max.apply(null,views).toLocaleString('ru'):'']],note:deep?'пролистано вглубь на '+(pages.length-1)+' страниц':'нажми «глубокий разбор», чтобы дойти до первых постов'})
-          +card({site:'последние посты',status:'ok',rows:posts.slice(0,6).map(function(p,i){return ['#'+(i+1)+' '+(p.date||'').slice(0,10)+' '+(p.views||''),(p.text||'').replace(/\s+/g,' ').slice(0,150)];})})
-          +'</div>';
+          +card({site:'динамика',status:'ok',rows:[['первый пост',dates[0]&&dates[0].slice(0,10)],['последний пост',dates[dates.length-1]&&dates[dates.length-1].slice(0,10)],['средние просмотры',views.length?Math.round(views.reduce(function(a,b){return a+b;},0)/views.length).toLocaleString('ru'):''],['макс. просмотры',views.length?Math.max.apply(null,views).toLocaleString('ru'):'']],note:deep?'пролистано вглубь на '+(pages.length-1)+' страниц':'нажми «глубокий разбор»'})
+          +card({site:'последние посты',status:'ok',rows:posts.slice(0,6).map(function(p,i){return ['#'+(i+1)+' '+(p.date||'').slice(0,10)+' '+(p.views||''),(p.text||'').replace(/\s+/g,' ').slice(0,150)];})})+'</div>';
       }
     }
     html+='<div class="sect">вероятный создатель / админы</div>';
-    if(!admins.length){html+='<div class="empty">прямых контактов не нашлось. Запусти «глубокий разбор» — админ часто указан в закрепе или старых постах.</div>';}
+    if(!admins.length){html+='<div class="empty">контактов не нашлось. Запусти «глубокий разбор» — админ часто в закрепе или первых постах.</div>';}
     else{
       html+='<div class="grid">'+admins.map(function(a){
         return card({site:a,cat:'кандидат',status:scores[a]>=6?'ok':'warn',
-          rows:[['вес',scores[a]],['в описании',descText.toLowerCase().indexOf(a)>-1?'да':''],
-                ['контекст','упоминается рядом со словами про админа/связь/рекламу']],
-          link:'https://t.me/'+a.replace('@','')});
+          rows:[['вес',scores[a]],['в описании',descText.toLowerCase().indexOf(a)>-1?'да':''],['контекст','рядом со словами про админа/связь/рекламу']],link:'https://t.me/'+a.replace('@','')});
       }).join('')+'</div>';
-      html+='<div class="hint">Вес: упоминание в описании канала +4, посты с ключевыми словами «админ / связь / реклама / по вопросам» +3, частота упоминаний +до 4.</div>';
+      html+='<div class="hint">Вес: описание канала +4, посты с ключевыми словами +3, частота упоминаний +до 4.</div>';
       html+='<div class="sect">проверить кандидатов</div><div>'
-        +admins.map(function(a){var un=a.replace('@','');return '<span class="tag p" onclick="APP.nickOf(\''+esc(un)+'\')">'+esc(a)+' → ники</span>';}).join('')+'</div>';
+        +admins.map(function(a){var un=a.replace('@','');return '<span class="tag p" data-act="nickOf" data-user="'+esc(un)+'">'+esc(a)+' → ники</span>';}).join('')+'</div>';
     }
-    if(Object.keys(acc.mails).length)html+='<div class="sect">email в канале</div><div>'+Object.keys(acc.mails).map(function(m){return '<span class="tag">'+esc(m)+'</span>';}).join('')+'</div>';
+    if(Object.keys(acc.mails).length)html+='<div class="sect">email</div><div>'+Object.keys(acc.mails).map(function(m){return '<span class="tag">'+esc(m)+'</span>';}).join('')+'</div>';
     if(Object.keys(acc.tags).length)html+='<div class="sect">хэштеги</div><div>'+Object.keys(acc.tags).slice(0,30).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div>';
     if(Object.keys(acc.dom).length)html+='<div class="sect">внешние домены</div><div>'+Object.keys(acc.dom).sort(function(a,b){return acc.dom[b]-acc.dom[a];}).slice(0,20).map(function(d){return '<span class="tag">'+esc(d)+' ('+acc.dom[d]+')</span>';}).join('')+'</div>';
-    if(Object.keys(acc.users).length)html+='<div class="sect">все упомянутые юзернеймы</div><div>'+Object.keys(acc.users).slice(0,40).map(function(u){return '<span class="tag p" onclick="APP.nickOf(\''+esc(u.replace('@',''))+'\')">'+esc(u)+'</span>';}).join('')+'</div>';
+    if(Object.keys(acc.users).length)html+='<div class="sect">все упомянутые юзернеймы</div><div>'+Object.keys(acc.users).slice(0,40).map(function(u){return '<span class="tag p" data-act="nickOf" data-user="'+esc(u.replace('@',''))+'">'+esc(u)+'</span>';}).join('')+'</div>';
     html+='<div class="sect">внешние базы</div>'+extLinks(id.replace('+',''));
     box.innerHTML=html;
     push('telegram',{id:id,title:info.title||'',subs:subs,admins:admins});
     log('tg готово: '+(info.title||id));
-  })['catch'](function(e){box.innerHTML='<div class="empty">'+esc(e.message)+'<br>проверь вкладку «связь»</div>'+extLinks(id);});
+  })['catch'](function(e){box.innerHTML='<div class="empty">'+esc(e.message)+'<br>проверь вкладку «связь»</div>'+extLinks(id);log('tg ошибка: '+e.message);});
 }
 
-/* ---------- EMAIL ---------- */
 function doh(name,type){
   return direct('https://cloudflare-dns.com/dns-query?name='+encodeURIComponent(name)+'&type='+type,{headers:{accept:'application/dns-json'},timeout:7000})
     .then(function(r){if(r.status>=400)throw new Error('dns '+r.status);return JSON.parse(r.text);});
 }
 function runEmail(){
   var em=String($('#emIn').value||'').trim().toLowerCase(),box=$('#emOut');
-  if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(em)){box.innerHTML='<div class="empty">не похоже на email</div>';return;}
-  box.innerHTML='<div class="empty"><span class="pulse"></span> проверяю...</div>';
+  if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(em)){box.innerHTML='<div class="empty">не похоже на email — впиши адрес в поле</div>';log('email: неверный формат');return;}
+  box.innerHTML='<div class="empty"><span class="pulse"></span> проверяю '+esc(em)+'...</div>';
+  log('email: работаю по '+em);
   var p=em.split('@'),local=p[0],domain=p[1],cards=[];
   Promise.all([
     doh(domain,'MX').then(function(mx){var m=(mx.Answer||[]).map(function(a){return a.data.replace(/^\d+\s+/,'');});
@@ -556,18 +551,17 @@ function runEmail(){
   ]).then(function(){
     var cands=[local,local.replace(/[._-]/g,'')].filter(function(v,i,a){return v&&a.indexOf(v)===i;});
     box.innerHTML=kv([['email',em],['домен',domain],['локальная часть',local]])
-      +'<div class="sect">кандидаты ников</div><div>'+cands.map(function(c){return '<span class="tag p" onclick="APP.nickOf(\''+esc(c)+'\')">'+esc(c)+'</span>';}).join('')+'</div>'
+      +'<div class="sect">кандидаты ников</div><div>'+cands.map(function(c){return '<span class="tag p" data-act="nickOf" data-user="'+esc(c)+'">'+esc(c)+'</span>';}).join('')+'</div>'
       +'<div class="sect">результаты</div><div class="grid">'+cards.join('')+'</div>'
       +'<div class="sect">внешние</div><div>'
       +'<a class="lnk" href="https://haveibeenpwned.com/account/'+encodeURIComponent(em)+'" target="_blank">hibp</a>'
       +'<a class="lnk" href="https://leakcheck.io/check?check='+encodeURIComponent(em)+'" target="_blank">leakcheck</a>'
       +'<a class="lnk" href="https://dehashed.com" target="_blank">dehashed</a>'
       +'<a class="lnk" href="https://intelx.io" target="_blank">intelx</a></div>';
-    push('email',{email:em});
+    push('email',{email:em});log('email готово');
   });
 }
 
-/* ---------- ТЕЛЕФОН ---------- */
 var CC={'7':'Россия / Казахстан','380':'Украина','375':'Беларусь','373':'Молдова','995':'Грузия','994':'Азербайджан','998':'Узбекистан','996':'Киргизия','992':'Таджикистан','993':'Туркменистан','374':'Армения','371':'Латвия','370':'Литва','372':'Эстония','1':'США / Канада','44':'Великобритания','49':'Германия','33':'Франция','34':'Испания','39':'Италия','31':'Нидерланды','32':'Бельгия','41':'Швейцария','43':'Австрия','48':'Польша','420':'Чехия','421':'Словакия','36':'Венгрия','40':'Румыния','359':'Болгария','30':'Греция','90':'Турция','972':'Израиль','971':'ОАЭ','966':'Саудовская Аравия','86':'Китай','81':'Япония','82':'Корея','91':'Индия','92':'Пакистан','84':'Вьетнам','66':'Таиланд','60':'Малайзия','62':'Индонезия','65':'Сингапур','63':'Филиппины','61':'Австралия','64':'Новая Зеландия','55':'Бразилия','54':'Аргентина','52':'Мексика','56':'Чили','57':'Колумбия','27':'ЮАР','20':'Египет','234':'Нигерия','254':'Кения','212':'Марокко','386':'Словения','385':'Хорватия','381':'Сербия','382':'Черногория','389':'Сев. Македония','355':'Албания','358':'Финляндия','46':'Швеция','47':'Норвегия','45':'Дания','353':'Ирландия','351':'Португалия','352':'Люксембург','356':'Мальта','357':'Кипр','354':'Исландия'};
 var RU_OP={900:'Билайн / Tele2',901:'Tele2',902:'Tele2',903:'Билайн',904:'Tele2',905:'Билайн',906:'Билайн',908:'Tele2',909:'Билайн',910:'МТС',911:'МТС',912:'МТС',913:'МТС',914:'МТС',915:'МТС',916:'МТС',917:'МТС',918:'МТС',919:'МТС',920:'МегаФон',921:'МегаФон',922:'МегаФон',923:'МегаФон',924:'МегаФон',925:'МегаФон',926:'МегаФон',927:'МегаФон',928:'МегаФон',929:'МегаФон',930:'МегаФон',931:'МегаФон',932:'МегаФон',933:'МегаФон',934:'МегаФон',935:'МегаФон',936:'МегаФон',937:'МегаФон',938:'МегаФон',939:'МегаФон',950:'МТС / Tele2',951:'МТС / Tele2',952:'МТС / Tele2',953:'МТС / Tele2',954:'МТС',955:'МТС',956:'МТС',957:'МТС',958:'Tele2',959:'МТС',960:'Билайн',961:'Билайн',962:'Билайн',963:'Билайн',964:'Билайн',965:'Билайн',966:'Билайн',967:'Билайн',968:'Билайн',969:'Билайн',977:'Билайн / Tele2',978:'МТС',980:'МТС',981:'МТС',982:'МТС',983:'МТС',984:'МТС',985:'МТС',986:'МТС',987:'МТС',988:'МТС',989:'МТС',991:'Tele2',992:'Tele2',993:'Tele2',994:'Tele2',995:'МегаФон / Yota',996:'МегаФон / Tele2',997:'МТС',998:'Tele2 / Yota',999:'МегаФон / Yota'};
 function runPhone(){
@@ -576,7 +570,7 @@ function runPhone(){
   if(n.charAt(0)==='8'&&n.length===11)n='7'+n.slice(1);
   var cc=null;
   for(var L=3;L>=1;L--){if(CC[n.slice(0,L)]){cc=n.slice(0,L);break;}}
-  if(!cc){box.innerHTML='<div class="empty">не распознал код страны. Формат: +79991234567</div>';return;}
+  if(!cc){box.innerHTML='<div class="empty">не распознал код страны. Формат: +79991234567</div>';log('тел: формат');return;}
   var nat=n.slice(cc.length),e164='+'+n;
   var op=cc==='7'&&nat.length>=3?(RU_OP[nat.slice(0,3)]||'регион/стационарный'):'—';
   box.innerHTML=kv([['страна',CC[cc]],['код','+'+cc],['оператор',op],['E.164',e164]])
@@ -589,14 +583,13 @@ function runPhone(){
     +'<a class="lnk" href="https://www.getcontact.com/ru/search?q='+n+'" target="_blank">getcontact</a>'
     +'<a class="lnk" href="https://numbuster.com/ru/search/'+n+'" target="_blank">numbuster</a>'
     +'<a class="lnk" href="https://vk.com/search?c%5Bq%5D='+n+'" target="_blank">vk</a></div>';
-  push('phone',{e164:e164});
+  push('phone',{e164:e164});log('тел готово');
 }
 
-/* ---------- ДОМЕН / IP ---------- */
 function isIp(s){return /^\d{1,3}(\.\d{1,3}){3}$/.test(s);}
 function runNet(){
   var q=String($('#netIn').value||'').trim().replace(/^https?:\/\//,'').replace(/\/.*$/,''),box=$('#netOut');
-  if(!q)return;
+  if(!q){log('домен: пусто');return;}
   box.innerHTML='<div class="empty"><span class="pulse"></span> собираю...</div>';
   var cards=[],tasks=[];
   if(isIp(q)){
@@ -616,11 +609,10 @@ function runNet(){
   }
   Promise.all(tasks).then(function(){
     box.innerHTML='<div class="sect">'+esc(q)+'</div><div class="grid">'+cards.join('')+'</div>';
-    push('net',{host:q});
+    push('net',{host:q});log('домен готово');
   });
 }
 
-/* ---------- УТЕЧКИ ---------- */
 function getBreaches(){
   var d=cget('breaches');if(d)return Promise.resolve(d);
   return smart('https://haveibeenpwned.com/api/v3/breaches',{timeout:20000}).then(function(r){
@@ -629,7 +621,7 @@ function getBreaches(){
 }
 function runLeak(){
   var q=String($('#leakIn').value||'').trim().toLowerCase(),box=$('#leakOut');
-  if(!q)return;
+  if(!q){log('утечки: пусто');return;}
   box.innerHTML='<div class="empty"><span class="pulse"></span> тяну базу утечек...</div>';
   getBreaches().then(function(all){
     if(q.indexOf('@')>-1)return smart('https://haveibeenpwned.com/unifiedsearch/'+encodeURIComponent(q),{timeout:14000})
@@ -643,12 +635,11 @@ function runLeak(){
         rows:[['дата',b.BreachDate],['затронуто',b.PwnCount?b.PwnCount.toLocaleString('ru'):''],['данные',(b.DataClasses||[]).join(', ')],['описание',(b.Description||'').replace(/<[^>]+>/g,'').slice(0,200)]],
         link:'https://haveibeenpwned.com/PwnedWebsites#'+b.Name,
         note:(b.DataClasses||[]).some(function(d){return /password/i.test(d);})?'пароли утекали':''});}).join('')+'</div>'
-      +'<div class="sect">внешние</div><div><a class="lnk" href="https://leakcheck.io/check?check='+encodeURIComponent(q)+'" target="_blank">leakcheck</a><a class="lnk" href="https://dehashed.com" target="_blank">dehashed</a><a class="lnk" href="https://snusbase.com" target="_blank">snusbase</a><a class="lnk" href="https://intelx.io/?s='+encodeURIComponent(q)+'" target="_blank">intelx</a></div>';
-    push('leak',{query:q,count:list.length});
+      +'<div class="sect">внешние</div><div><a class="lnk" href="https://leakcheck.io/check?check='+encodeURIComponent(q)+'" target="_blank">leakcheck</a><a class="lnk" href="https://dehashed.com" target="_blank">dehashed</a><a class="lnk" href="https://snusbase.com" target="_blank">snusbase</a></div>';
+    push('leak',{query:q,count:list.length});log('утечки готово');
   },function(e){box.innerHTML='<div class="empty">ошибка: '+esc(e.message)+'</div>';});
 }
 
-/* ---------- МАСС-СКАН ---------- */
 var bulkAbort=false;
 function pool(items,worker,conc,onTick){
   var i=0,done=0;
@@ -659,10 +650,10 @@ function pool(items,worker,conc,onTick){
   return Promise.all(a);
 }
 function runBulk(){
-  var u=String($('#bulkIn').value||'').trim().replace(/^@/,'');if(!u)return;
+  var u=String($('#bulkIn').value||'').trim().replace(/^@/,'');if(!u){log('масс-скан: пусто');return;}
   var box=$('#bulkOut');
   box.innerHTML='<div class="empty">загружаю базу...</div>';
-  var g=$('#bulkGo');if(g)g.disabled=true;bulkAbort=false;
+  bulkAbort=false;
   var cached=cget('wmn'),chain;
   if(cached)chain=Promise.resolve(cached);
   else chain=direct('https://raw.githubusercontent.com/WebBreacher/WhatsMyName/main/wmn-data.json').then(function(r){
@@ -693,10 +684,9 @@ function runBulk(){
       box.innerHTML='<div class="sect">найдено на '+found.length+' из '+total+'</div><div class="grid">'+found.map(function(f){return card({site:f.site,cat:f.cat,status:'ok',link:f.url});}).join('')+'</div>';
       push('bulk',{query:u,total:total,found:found.map(function(f){return f.site;})});
     });
-  }).then(function(){if(g)g.disabled=false;},function(e){box.innerHTML='<div class="empty">ошибка: '+esc(e.message)+'</div>';if(g)g.disabled=false;});
+  }).then(function(){},function(e){box.innerHTML='<div class="empty">ошибка: '+esc(e.message)+'</div>';});
 }
 
-/* ---------- ДИАГНОСТИКА ---------- */
 function runDiag(){
   var box=$('#diagOut');
   box.innerHTML='<div class="empty"><span class="pulse"></span> тестирую каналы...</div>';
@@ -722,47 +712,77 @@ function runDiag(){
   function finish(){
     $('#diagWhen').textContent=new Date().toLocaleTimeString('ru');
     if(okc===0){setNet(false);banner('<b>Сеть закрыта.</b> Отключи блокировщик рекламы для этой страницы.');}
-    else if(!directOk){setNet(true);banner('<b>Прямые запросы режутся, релеи работают.</b> Будет медленнее, но рабочее.');}
+    else if(!directOk){setNet(true);banner('<b>Прямые запросы режутся, релеи работают.</b>');}
     else{setNet(true);banner('');}
-    log('диагностика: '+okc+'/'+tests.length);
+    log('диагностика: '+okc+'/'+tests.length+' каналов');
   }
   step();
 }
 function chanCheck(){
   var el=$('#eng');if(!el)return;
-  el.textContent='движок: запущен, проверяю канал...';
+  el.innerHTML='<b style="color:#3ddc97">движок: ЗАПУЩЕН</b> в '+new Date().toLocaleTimeString()+', проверяю сеть...';
   var t0=Date.now();
   direct('https://api.github.com/zen',{timeout:7000}).then(function(){
-    el.innerHTML='<b style="color:#3ddc97">движок: запущен · канал прямой OK</b> ('+(Date.now()-t0)+'мс)';
-    setNet(true);
+    el.innerHTML='<b style="color:#3ddc97">движок: ЗАПУЩЕН</b> · прямой канал OK ('+(Date.now()-t0)+'мс)';setNet(true);
   },function(){
     viaProxy('codetabs','https://api.github.com/zen',9000).then(function(){
-      el.innerHTML='<b style="color:#3ddc97">движок: запущен · канал через релей OK</b> — медленнее';
-      setNet(true);
+      el.innerHTML='<b style="color:#3ddc97">движок: ЗАПУЩЕН</b> · канал через релей OK';setNet(true);
     },function(){
-      el.innerHTML='<b style="color:#ff6b6b">движок: запущен · сеть недоступна</b> — смотри вкладку «связь»';
-      setNet(false);
+      el.innerHTML='<b style="color:#ff6b6b">движок: ЗАПУЩЕН, но сеть недоступна</b> — смотри вкладку «связь»';setNet(false);
     });
   });
 }
 
-/* ---------- API ---------- */
-function tab(t){
-  $$('#tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===t);});
-  $$('.panel').forEach(function(p){p.classList.toggle('on',p.id==='p-'+t);});
-}
-function nickOf(u){tab('nick');$('#nickIn').value=u;runNick(u);}
-function enter(e,expr){if(e.key==='Enter')eval(expr);}
-function boot(){try{chanCheck();setTimeout(runDiag,600);log('готов. Вставь ссылку на канал во вкладке «канал / telegram».');}catch(e){banner('ошибка запуска: '+esc(e.message));}}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-
-return {tab:tab,nick:function(){runNick($('#nickIn').value);},demo:function(){$('#nickIn').value='torvalds';runNick('torvalds');},
-  tg:function(){runTg(false);},tgDeep:function(){runTg(true);},nickOf:nickOf,enter:enter,
-  email:runEmail,phone:runPhone,net:runNet,leak:runLeak,bulk:runBulk,bulkStop:function(){bulkAbort=true;},diag:runDiag,
-  setRelay:function(v){proxyOrder=[v].concat(Object.keys(PROXIES).filter(function(k){return k!==v;}));Object.keys(dead).forEach(function(k){dead[k]=false;});log('релей: '+v);},
+var ACT={
+  tab:function(el){var t=el.getAttribute('data-tab');
+    $$('#tabs button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===t);});
+    $$('.panel').forEach(function(p){p.classList.toggle('on',p.id==='p-'+t);});
+    log('вкладка: '+t);},
+  nick:function(){runNick($('#nickIn').value);},
+  demo:function(){$('#nickIn').value='torvalds';runNick('torvalds');},
+  nickOf:function(el){var u=el.getAttribute('data-user');ACT.tab($('#tabs button[data-tab=nick]'));$('#nickIn').value=u;runNick(u);},
+  tg:function(){runTg(false);},
+  tgDeep:function(){runTg(true);},
+  email:runEmail,phone:runPhone,net:runNet,leak:runLeak,bulk:runBulk,
+  bulkStop:function(){bulkAbort=true;log('остановка');},
+  diag:runDiag,
   exportJson:function(){
     var blob=new Blob([JSON.stringify({generated:new Date().toISOString(),results:RESULTS},null,2)],{type:'application/json'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='osint-report.json';a.click();}};
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='osint-report.json';a.click();
+    log('отчёт сохранён');}
+};
+
+document.addEventListener('click',function(ev){
+  var t=ev.target;
+  while(t&&t!==document&&!(t.getAttribute&&t.getAttribute('data-act')))t=t.parentNode;
+  if(!t||t===document)return;
+  var act=t.getAttribute('data-act');
+  echo('«'+act+'» в '+new Date().toLocaleTimeString());
+  if(ACT[act]){try{ACT[act](t);}catch(e){log('ошибка '+act+': '+e.message);}}
+},false);
+
+document.addEventListener('keydown',function(ev){
+  if(ev.key!=='Enter')return;
+  var t=ev.target,a=t&&t.getAttribute&&t.getAttribute('data-enter');
+  if(a&&ACT[a]){echo('enter → '+a);ACT[a](t);}
+},false);
+
+document.addEventListener('change',function(ev){
+  var t=ev.target;
+  if(t&&t.getAttribute&&t.getAttribute('data-change')==='relay'){
+    var v=t.value;
+    proxyOrder=[v].concat(Object.keys(PROXIES).filter(function(k){return k!==v;}));
+    Object.keys(dead).forEach(function(k){dead[k]=false;});
+    echo('релей: '+v);log('приоритетный релей: '+v);
+  }
+},false);
+
+function boot(){
+  chanCheck();
+  setTimeout(runDiag,700);
+  log('готов. Нажми «демо» для проверки.');
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
 </body>
